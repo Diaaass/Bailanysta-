@@ -1,0 +1,55 @@
+export function cn(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(" ");
+}
+
+const RELATIVE = new Intl.RelativeTimeFormat("ru", { numeric: "auto" });
+
+const STEPS: [Intl.RelativeTimeFormatUnit, number][] = [
+  ["second", 60],
+  ["minute", 60],
+  ["hour", 24],
+  ["day", 7],
+  ["week", 4.34524],
+  ["month", 12],
+];
+
+export function relativeTime(iso: string) {
+  const diffMs = new Date(iso).getTime() - Date.now();
+  let value = diffMs / 1000;
+
+  for (const [unit, span] of STEPS) {
+    if (Math.abs(value) < span) {
+      return RELATIVE.format(Math.round(value), unit);
+    }
+    value /= span;
+  }
+  return RELATIVE.format(Math.round(value), "year");
+}
+
+export function absoluteTime(iso: string) {
+  return new Intl.DateTimeFormat("ru", {
+    dateStyle: "long",
+    timeStyle: "short",
+  }).format(new Date(iso));
+}
+
+// Deterministic avatar colour so a user keeps the same identity everywhere
+// without storing or uploading an image.
+const AVATAR_HUES = [188, 205, 224, 262, 318, 12, 34, 152];
+
+export function avatarStyle(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  const hue = AVATAR_HUES[hash % AVATAR_HUES.length];
+  const shift = (hash >> 3) % 22;
+  return {
+    background: `linear-gradient(145deg, hsl(${hue} 52% 46%), hsl(${(hue + 26 + shift) % 360} 56% 34%))`,
+  };
+}
+
+export function initials(displayName: string) {
+  const words = displayName.trim().split(/\s+/).slice(0, 2);
+  return words.map((w) => [...w][0] ?? "").join("").toUpperCase() || "?";
+}
