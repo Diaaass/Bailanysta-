@@ -2,8 +2,11 @@ import type { NextRequest } from "next/server";
 import { badRequest, getSessionUser, notFound, unauthorized } from "@/lib/api";
 import { updateProfile } from "@/lib/queries/users";
 import { profileUpdateSchema } from "@/lib/validation";
+import { getTranslations } from "@/lib/i18n";
+import { translateIssue } from "@/lib/i18n/translate-issue";
 
 export async function PATCH(request: NextRequest) {
+  const { t } = await getTranslations();
   const viewer = await getSessionUser();
   if (!viewer) return unauthorized();
 
@@ -11,14 +14,14 @@ export async function PATCH(request: NextRequest) {
   try {
     raw = await request.json();
   } catch {
-    return badRequest("Invalid JSON body");
+    return badRequest(t.validation.invalidBody);
   }
 
   const parsed = profileUpdateSchema.safeParse(raw);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     return Response.json(
-      { error: issue?.message ?? "Проверьте поля", field: issue?.path?.[0] },
+      { error: translateIssue(issue?.message, t), field: issue?.path?.[0] },
       { status: 400 },
     );
   }

@@ -7,7 +7,7 @@ const CHAT_MODEL = process.env.AI_MODEL;
 const EMBEDDING_MODEL = process.env.AI_EMBEDDING_MODEL;
 
 export class AiUnavailableError extends Error {
-  constructor(message = "AI-функции выключены: не задан ключ доступа") {
+  constructor(message = "AI is not configured") {
     super(message);
     this.name = "AiUnavailableError";
   }

@@ -7,6 +7,8 @@ import { FEED_PAGE_SIZE, getFeed, getPostById } from "@/lib/queries/posts";
 import { postContentSchema } from "@/lib/validation";
 import { indexPost } from "@/lib/ai/indexing";
 import { detectLanguage } from "@/lib/language";
+import { getTranslations } from "@/lib/i18n";
+import { translateIssue } from "@/lib/i18n/translate-issue";
 
 export async function GET(request: NextRequest) {
   const viewer = await getSessionUser();
@@ -30,6 +32,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const { t } = await getTranslations();
   const viewer = await getSessionUser();
   if (!viewer) return unauthorized();
 
@@ -37,14 +40,14 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return badRequest("Invalid JSON body");
+    return badRequest(t.validation.invalidBody);
   }
 
   const parsed = postContentSchema.safeParse(
     (body as { content?: unknown })?.content,
   );
   if (!parsed.success) {
-    return badRequest(parsed.error.issues[0]?.message ?? "Invalid content");
+    return badRequest(translateIssue(parsed.error.issues[0]?.message, t));
   }
 
   const [created] = await db

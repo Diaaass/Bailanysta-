@@ -6,8 +6,12 @@ import { users } from "@/lib/db/schema";
 import { badRequest } from "@/lib/api";
 import { registerSchema } from "@/lib/validation";
 import { callerAddress, checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { getTranslations } from "@/lib/i18n";
+import { translateIssue } from "@/lib/i18n/translate-issue";
 
 export async function POST(request: NextRequest) {
+  const { t } = await getTranslations();
+
   const limit = await checkRateLimit(
     "auth:signup",
     callerAddress(request.headers),
@@ -15,7 +19,7 @@ export async function POST(request: NextRequest) {
   );
   if (!limit.allowed) {
     return Response.json(
-      { error: "Слишком много регистраций. Попробуйте позже." },
+      { error: t.api.tooManySignups },
       {
         status: 429,
         headers: { "Retry-After": String(limit.retryAfterSeconds) },
@@ -27,14 +31,14 @@ export async function POST(request: NextRequest) {
   try {
     raw = await request.json();
   } catch {
-    return badRequest("Invalid JSON body");
+    return badRequest(t.validation.invalidBody);
   }
 
   const parsed = registerSchema.safeParse(raw);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
     return Response.json(
-      { error: issue?.message ?? "Проверьте поля", field: issue?.path?.[0] },
+      { error: translateIssue(issue?.message, t), field: issue?.path?.[0] },
       { status: 400 },
     );
   }
@@ -49,7 +53,7 @@ export async function POST(request: NextRequest) {
 
   if (taken) {
     return Response.json(
-      { error: "Это имя уже занято", field: "username" },
+      { error: t.api.usernameTaken, field: "username" },
       { status: 409 },
     );
   }

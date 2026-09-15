@@ -9,13 +9,15 @@ import { getPostById } from "@/lib/queries/posts";
 import { getViewerChrome } from "@/lib/queries/users";
 import { SinglePost } from "@/components/post/SinglePost";
 import { CommentThread } from "@/components/post/CommentThread";
+import { getTranslations } from "@/lib/i18n";
 
 export async function generateMetadata(
   props: PageProps<"/post/[id]">,
 ): Promise<Metadata> {
   const { id } = await props.params;
+  const { t } = await getTranslations();
   const post = await getPostById(id);
-  if (!post) return { title: "Пост не найден" };
+  if (!post) return { title: t.post.notFound };
   return {
     title: `${post.author.displayName}: ${post.content.slice(0, 60)}`,
     description: post.content.slice(0, 160),
@@ -24,6 +26,7 @@ export async function generateMetadata(
 
 export default async function PostPage(props: PageProps<"/post/[id]">) {
   const { id } = await props.params;
+  const { t } = await getTranslations();
   const session = await getSessionUser();
   if (!session) redirect("/login");
 
@@ -54,7 +57,7 @@ export default async function PostPage(props: PageProps<"/post/[id]">) {
         <Link
           href="/"
           className="rounded-full p-1.5 text-ink-muted transition-colors hover:bg-surface-sunk hover:text-ink"
-          aria-label="Назад в ленту"
+          aria-label={t.post.backToFeed}
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden>
             <path
@@ -66,7 +69,9 @@ export default async function PostPage(props: PageProps<"/post/[id]">) {
             />
           </svg>
         </Link>
-        <h1 className="text-[1.0625rem] font-semibold text-ink">Пост</h1>
+        <h1 className="text-[1.0625rem] font-semibold text-ink">
+          {t.post.single}
+        </h1>
       </div>
 
       <SinglePost post={post} />

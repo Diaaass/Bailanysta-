@@ -5,6 +5,8 @@ import { getProfile, getViewerChrome } from "@/lib/queries/users";
 import { getFeed } from "@/lib/queries/posts";
 import { Feed } from "@/components/post/Feed";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
+import { getTranslations } from "@/lib/i18n";
+import { format } from "@/lib/i18n/format";
 
 export async function generateMetadata(
   props: PageProps<"/profile/[username]">,
@@ -17,6 +19,7 @@ export default async function ProfilePage(
   props: PageProps<"/profile/[username]">,
 ) {
   const { username } = await props.params;
+  const { t } = await getTranslations();
   const session = await getSessionUser();
   if (!session) redirect("/login");
 
@@ -46,12 +49,14 @@ export default async function ProfilePage(
         showScopeSwitch={false}
         authorUsername={profile.username}
         emptyTitle={
-          profile.isViewer ? "Вы ещё ничего не написали" : "Постов пока нет"
+          profile.isViewer ? t.profile.emptyOwnTitle : t.profile.emptyTitle
         }
         emptyDescription={
           profile.isViewer
-            ? "Первый пост появится здесь и в общей ленте."
-            : `${profile.displayName} пока не опубликовал ни одного поста.`
+            ? t.profile.emptyOwnDescription
+            : format(t.profile.emptyDescription, {
+                name: profile.displayName,
+              })
         }
       />
     </div>

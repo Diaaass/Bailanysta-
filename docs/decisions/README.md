@@ -13,3 +13,4 @@
 | [0006](0006-hybrid-search-threshold.md) | Гибридный поиск с порогом из замеров | принято |
 | [0007](0007-rate-limit-in-database.md) | Лимит запросов в базе, а не в памяти процесса | заменяет прежнее решение |
 | [0008](0008-csp-unsafe-inline.md) | CSP с `unsafe-inline` для скриптов | принято, с оговорками |
+| [0009](0009-dictionary-time-formatting.md) | Относительное время из словаря, а не из `Intl.RelativeTimeFormat` | принято |

@@ -5,17 +5,16 @@ import { getSessionUser } from "@/lib/api";
 import { getNotifications, markAllRead } from "@/lib/queries/notifications";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { relativeTime } from "@/lib/utils";
+import { relativeTime } from "@/lib/i18n/time";
+import { getTranslations } from "@/lib/i18n";
 
-export const metadata: Metadata = { title: "Уведомления" };
-
-const VERB = {
-  like: "оценил ваш пост",
-  comment: "прокомментировал ваш пост",
-  follow: "подписался на вас",
-} as const;
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslations();
+  return { title: t.notifications.title };
+}
 
 export default async function NotificationsPage() {
+  const { locale, t } = await getTranslations();
   const viewer = await getSessionUser();
   if (!viewer) redirect("/login");
 
@@ -28,14 +27,14 @@ export default async function NotificationsPage() {
   return (
     <div className="px-4 lg:px-0">
       <h1 className="border-b border-line py-5 text-[1.25rem] font-semibold tracking-tight text-ink">
-        Уведомления
+        {t.notifications.title}
       </h1>
 
       {items.length === 0 ? (
         <div className="pt-6">
           <EmptyState
-            title="Пока тихо"
-            description="Здесь появятся лайки, комментарии и новые подписчики."
+            title={t.notifications.emptyTitle}
+            description={t.notifications.emptyDescription}
           />
         </div>
       ) : (
@@ -53,7 +52,9 @@ export default async function NotificationsPage() {
                     <span className="font-semibold">
                       {item.actor.displayName}
                     </span>{" "}
-                    <span className="text-ink-muted">{VERB[item.type]}</span>
+                    <span className="text-ink-muted">
+                      {t.notifications[item.type]}
+                    </span>
                   </p>
                   {item.postExcerpt ? (
                     <p className="mt-1 truncate text-[0.875rem] text-ink-faint">
@@ -61,12 +62,12 @@ export default async function NotificationsPage() {
                     </p>
                   ) : null}
                   <p className="mt-1 text-[0.8125rem] text-ink-faint">
-                    {relativeTime(item.createdAt)}
+                    {relativeTime(item.createdAt, locale, t)}
                   </p>
                 </div>
                 {!item.isRead ? (
                   <span
-                    aria-label="Новое"
+                    aria-label={t.notifications.new}
                     className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent"
                   />
                 ) : null}

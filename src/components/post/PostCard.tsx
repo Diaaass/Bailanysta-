@@ -5,10 +5,13 @@ import Link from "next/link";
 import type { FeedPost } from "@/lib/queries/posts";
 import { Avatar } from "@/components/ui/Avatar";
 import { PostContent } from "@/components/post/PostContent";
-import { absoluteTime, cn, relativeTime } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { absoluteTime, relativeTime } from "@/lib/i18n/time";
 import { postContentSchema } from "@/lib/validation";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { LanguageBadge } from "@/components/ui/LanguageBadge";
+import { useLocale, useT } from "@/components/i18n/LocaleProvider";
+import { translateIssue } from "@/lib/i18n/translate-issue";
 
 type Props = {
   post: FeedPost;
@@ -17,6 +20,8 @@ type Props = {
 };
 
 export function PostCard({ post, onChange, onDelete }: Props) {
+  const t = useT();
+  const locale = useLocale();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(post.content);
   const [busy, setBusy] = useState(false);
@@ -46,14 +51,14 @@ export function PostCard({ post, onChange, onDelete }: Props) {
       });
     } catch {
       onChange?.(post);
-      setError("Не удалось сохранить лайк");
+      setError(t.post.likeFailed);
     }
   }
 
   async function saveEdit() {
     const parsed = postContentSchema.safeParse(draft);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Проверьте текст поста");
+      setError(translateIssue(parsed.error.issues[0]?.message, t));
       return;
     }
     setBusy(true);
@@ -69,7 +74,7 @@ export function PostCard({ post, onChange, onDelete }: Props) {
       onChange?.(data.post);
       setEditing(false);
     } catch {
-      setError("Не удалось сохранить изменения");
+      setError(t.post.saveFailed);
     } finally {
       setBusy(false);
     }
@@ -82,7 +87,7 @@ export function PostCard({ post, onChange, onDelete }: Props) {
       if (!res.ok) throw new Error();
       onDelete?.(post.id);
     } catch {
-      setError("Не удалось удалить пост");
+      setError(t.post.deleteFailed);
       setBusy(false);
       setConfirmingDelete(false);
     }
@@ -111,13 +116,15 @@ export function PostCard({ post, onChange, onDelete }: Props) {
           </span>
           <Link
             href={`/post/${post.id}`}
-            title={absoluteTime(post.createdAt)}
+            title={absoluteTime(post.createdAt, t)}
             className="text-[0.8125rem] text-ink-faint hover:underline"
           >
-            {relativeTime(post.createdAt)}
+            {relativeTime(post.createdAt, locale, t)}
           </Link>
           {post.edited ? (
-            <span className="text-[0.8125rem] text-ink-faint">изменено</span>
+            <span className="text-[0.8125rem] text-ink-faint">
+              {t.post.edited}
+            </span>
           ) : null}
           {post.lang ? (
             <LanguageBadge lang={post.lang} />
@@ -140,7 +147,7 @@ export function PostCard({ post, onChange, onDelete }: Props) {
                   disabled={busy}
                   className="rounded-full bg-accent px-3.5 py-1.5 text-[0.8125rem] font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-60"
                 >
-                  Сохранить
+                  {t.post.save}
                 </button>
                 <button
                   onClick={() => {
@@ -150,7 +157,7 @@ export function PostCard({ post, onChange, onDelete }: Props) {
                   }}
                   className="rounded-full px-3 py-1.5 text-[0.8125rem] text-ink-muted transition-colors hover:text-ink"
                 >
-                  Отмена
+                  {t.post.cancel}
                 </button>
               </div>
             </div>
@@ -163,7 +170,7 @@ export function PostCard({ post, onChange, onDelete }: Props) {
           <button
             onClick={toggleLike}
             aria-pressed={post.likedByViewer}
-            aria-label={post.likedByViewer ? "Убрать лайк" : "Поставить лайк"}
+            aria-label={post.likedByViewer ? t.post.unlike : t.post.like}
             className={cn(
               "flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2.5 text-[0.8125rem] transition-colors",
               post.likedByViewer
@@ -213,14 +220,14 @@ export function PostCard({ post, onChange, onDelete }: Props) {
                 onClick={() => setEditing(true)}
                 className="rounded-full px-2.5 py-1 text-[0.8125rem] text-ink-faint transition-colors hover:text-ink"
               >
-                Изменить
+                {t.post.edit}
               </button>
               <button
                 onClick={() => setConfirmingDelete(true)}
                 disabled={busy}
                 className="rounded-full px-2.5 py-1 text-[0.8125rem] text-ink-faint transition-colors hover:text-danger disabled:opacity-50"
               >
-                Удалить
+                {t.post.delete}
               </button>
             </div>
           ) : null}
@@ -234,9 +241,9 @@ export function PostCard({ post, onChange, onDelete }: Props) {
 
         {confirmingDelete ? (
           <ConfirmDialog
-            title="Удалить пост?"
-            description="Пост исчезнет из ленты и из поиска вместе с лайками и комментариями. Отменить это нельзя."
-            confirmLabel="Удалить"
+            title={t.post.deleteTitle}
+            description={t.post.deleteDescription}
+            confirmLabel={t.post.delete}
             busy={busy}
             onConfirm={remove}
             onCancel={() => setConfirmingDelete(false)}

@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
 import { getPostById } from "@/lib/queries/posts";
-import { avatarStyle, initials, plural } from "@/lib/utils";
+import { avatarStyle, initials } from "@/lib/utils";
+import { plural } from "@/lib/i18n/plural";
+import { getTranslations } from "@/lib/i18n";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -13,6 +15,7 @@ export default async function Image({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const { locale, t } = await getTranslations();
   const post = await getPostById(id);
 
   if (!post) {
@@ -30,7 +33,7 @@ export default async function Image({
             fontSize: 44,
           }}
         >
-          Пост не найден
+          {t.post.notFound}
         </div>
       ),
       size,
@@ -95,15 +98,8 @@ export default async function Image({
           }}
         >
           <div style={{ display: "flex", gap: 26 }}>
-            <div>{plural(post.likeCount, "лайк", "лайка", "лайков")}</div>
-            <div>
-              {plural(
-                post.commentCount,
-                "комментарий",
-                "комментария",
-                "комментариев",
-              )}
-            </div>
+            <div>{plural(locale, post.likeCount, t.post.likeWord)}</div>
+            <div>{plural(locale, post.commentCount, t.post.commentWord)}</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none">

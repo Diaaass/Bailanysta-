@@ -4,18 +4,21 @@ import { getSessionUser } from "@/lib/api";
 import { getConnections } from "@/lib/queries/users";
 import { UserList } from "@/components/profile/UserList";
 import { ConnectionsHeader } from "@/components/profile/ConnectionsHeader";
+import { getTranslations } from "@/lib/i18n";
 
 export async function generateMetadata(
   props: PageProps<"/profile/[username]/followers">,
 ): Promise<Metadata> {
   const { username } = await props.params;
-  return { title: `Подписчики @${username}` };
+  const { t } = await getTranslations();
+  return { title: `${t.profile.followersTab} @${username}` };
 }
 
 export default async function FollowersPage(
   props: PageProps<"/profile/[username]/followers">,
 ) {
   const { username } = await props.params;
+  const { t } = await getTranslations();
   const viewer = await getSessionUser();
   if (!viewer) redirect("/login");
 
@@ -27,8 +30,8 @@ export default async function FollowersPage(
       <ConnectionsHeader username={username} active="followers" />
       <UserList
         users={users}
-        emptyTitle="Подписчиков пока нет"
-        emptyDescription="Здесь появятся люди, которые подпишутся на этот профиль."
+        emptyTitle={t.profile.noFollowersTitle}
+        emptyDescription={t.profile.noFollowersDescription}
       />
     </div>
   );

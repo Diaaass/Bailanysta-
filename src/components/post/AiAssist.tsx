@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/LocaleProvider";
+import type { Dictionary } from "@/lib/i18n/dictionaries/ru";
 
 type Action = {
-  key: string;
-  label: string;
+  key: keyof Pick<Dictionary["ai"], "improve" | "toKazakh" | "toEnglish" | "hashtags">;
   mode: "draft" | "improve" | "translate" | "hashtags";
   targetLang?: "kk" | "ru" | "en";
   needsText: boolean;
@@ -15,22 +16,19 @@ type Action = {
 const ACTIONS: Action[] = [
   {
     key: "improve",
-    label: "Улучшить",
     mode: "improve",
     needsText: true,
     apply: (_, result) => result,
   },
   {
-    key: "kk",
-    label: "Қазақша",
+    key: "toKazakh",
     mode: "translate",
     targetLang: "kk",
     needsText: true,
     apply: (_, result) => result,
   },
   {
-    key: "en",
-    label: "English",
+    key: "toEnglish",
     mode: "translate",
     targetLang: "en",
     needsText: true,
@@ -38,7 +36,6 @@ const ACTIONS: Action[] = [
   },
   {
     key: "hashtags",
-    label: "Хэштеги",
     mode: "hashtags",
     needsText: true,
     apply: (current, result) => `${current.trimEnd()}\n\n${result}`,
@@ -52,6 +49,7 @@ export function AiAssist({
   content: string;
   onApply: (text: string) => void;
 }) {
+  const t = useT();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,11 +70,11 @@ export function AiAssist({
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new Error(data?.error ?? "Не удалось обратиться к модели");
+        throw new Error(data?.error ?? t.ai.failed);
       }
       onApply(action.apply(content, data.result));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось обратиться к модели");
+      setError(e instanceof Error ? e.message : t.ai.failed);
     } finally {
       setPending(null);
     }
@@ -101,7 +99,7 @@ export function AiAssist({
                 disabled && pending !== action.key && "opacity-40",
               )}
             >
-              {pending === action.key ? "…" : action.label}
+              {pending === action.key ? "…" : t.ai[action.key]}
             </button>
           );
         })}

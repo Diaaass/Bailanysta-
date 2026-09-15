@@ -4,10 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Profile } from "@/lib/queries/users";
 import { Avatar } from "@/components/ui/Avatar";
-import { cn, pluralWord } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { pluralWord } from "@/lib/i18n/plural";
+import { format } from "@/lib/i18n/format";
+import { monthYear } from "@/lib/i18n/time";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
+import { useLocale, useT } from "@/components/i18n/LocaleProvider";
 
 export function ProfileHeader({ profile }: { profile: Profile }) {
+  const t = useT();
+  const locale = useLocale();
   const [following, setFollowing] = useState(profile.followedByViewer);
   const [followers, setFollowers] = useState(profile.followerCount);
   const [busy, setBusy] = useState(false);
@@ -32,16 +38,13 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
     } catch {
       setFollowing(!next);
       setFollowers((n) => n + (next ? -1 : 1));
-      setError("Не удалось изменить подписку");
+      setError(t.profile.followFailed);
     } finally {
       setBusy(false);
     }
   }
 
-  const joined = new Intl.DateTimeFormat("ru", {
-    month: "long",
-    year: "numeric",
-  }).format(new Date(profile.createdAt));
+  const joined = monthYear(profile.createdAt, t);
 
   return (
     <header className="border-b border-line py-6">
@@ -57,7 +60,7 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
             onClick={() => setEditing(true)}
             className="rounded-full border border-line px-5 py-2 text-sm font-medium text-ink transition-colors hover:border-line-strong hover:bg-surface-sunk"
           >
-            Изменить профиль
+            {t.profile.edit}
           </button>
         ) : (
           <button
@@ -70,7 +73,7 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
                 : "bg-accent text-white hover:bg-accent-hover",
             )}
           >
-            {following ? "Вы подписаны" : "Подписаться"}
+            {following ? t.profile.following : t.profile.follow}
           </button>
         )}
       </div>
@@ -89,22 +92,22 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
           onClick={() => setEditing(true)}
           className="mt-3 text-[0.9375rem] text-accent hover:underline"
         >
-          Добавить описание профиля
+          {t.profile.addBio}
         </button>
       ) : null}
 
       <dl className="mt-4 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[0.875rem]">
         <div className="flex items-baseline gap-1.5">
-          <dt className="sr-only">Постов</dt>
+          <dt className="sr-only">{t.profile.postsLabel}</dt>
           <dd className="font-semibold tabular-nums text-ink">
             {profile.postCount}
           </dd>
           <span className="text-ink-muted">
-            {pluralWord(profile.postCount, "пост", "поста", "постов")}
+            {pluralWord(locale, profile.postCount, t.profile.posts)}
           </span>
         </div>
         <div>
-          <dt className="sr-only">Подписчиков</dt>
+          <dt className="sr-only">{t.profile.followersLabel}</dt>
           <dd>
             <Link
               href={`/profile/${profile.username}/followers`}
@@ -114,13 +117,13 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
                 {followers}
               </span>
               <span className="text-ink-muted">
-                {pluralWord(followers, "подписчик", "подписчика", "подписчиков")}
+                {pluralWord(locale, followers, t.profile.followers)}
               </span>
             </Link>
           </dd>
         </div>
         <div>
-          <dt className="sr-only">Подписок</dt>
+          <dt className="sr-only">{t.profile.followsLabel}</dt>
           <dd>
             <Link
               href={`/profile/${profile.username}/following`}
@@ -130,12 +133,14 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
                 {profile.followingCount}
               </span>
               <span className="text-ink-muted">
-                {pluralWord(profile.followingCount, "подписка", "подписки", "подписок")}
+                {pluralWord(locale, profile.followingCount, t.profile.follows)}
               </span>
             </Link>
           </dd>
         </div>
-        <span className="text-ink-faint">на Bailanysta с {joined}</span>
+        <span className="text-ink-faint">
+          {format(t.profile.joined, { date: joined })}
+        </span>
       </dl>
 
       {error ? (

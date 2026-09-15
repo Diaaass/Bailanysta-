@@ -20,6 +20,10 @@ export const test = base.extend<{ callerAddress: string }>({
   context: async ({ browser, callerAddress }, use) => {
     const context = await browser.newContext({
       extraHTTPHeaders: { "x-forwarded-for": callerAddress },
+      // A context built by hand does not inherit `use.locale`, and the
+      // interface follows Accept-Language on a first visit: without this every
+      // spec would be reading an English UI.
+      locale: "ru-RU",
     });
     await use(context);
     await context.close();

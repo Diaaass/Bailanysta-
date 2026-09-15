@@ -4,8 +4,10 @@ import { useRef, useState } from "react";
 import type { FeedPost } from "@/lib/queries/posts";
 import { Avatar } from "@/components/ui/Avatar";
 import { postContentSchema } from "@/lib/validation";
+import { translateIssue } from "@/lib/i18n/translate-issue";
 import { cn } from "@/lib/utils";
 import { AiAssist } from "@/components/post/AiAssist";
+import { useT } from "@/components/i18n/LocaleProvider";
 
 const LIMIT = 500;
 
@@ -16,6 +18,7 @@ export function PostComposer({
   author: { displayName: string; avatarSeed: string };
   onCreated: (post: FeedPost) => void;
 }) {
+  const t = useT();
   const [content, setContent] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +30,7 @@ export function PostComposer({
   async function submit() {
     const parsed = postContentSchema.safeParse(content);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Проверьте текст поста");
+      setError(translateIssue(parsed.error.issues[0]?.message, t));
       return;
     }
 
@@ -50,7 +53,7 @@ export function PostComposer({
       setError(
         e instanceof Error && e.message
           ? e.message
-          : "Пост не отправился. Попробуйте ещё раз.",
+          : t.composer.failed,
       );
     } finally {
       setBusy(false);
@@ -72,8 +75,8 @@ export function PostComposer({
             }
           }}
           rows={2}
-          placeholder="Не жаңалық? Что нового?"
-          aria-label="Текст поста"
+          placeholder={t.composer.placeholder}
+          aria-label={t.composer.label}
           className="w-full resize-none bg-transparent text-[1.0625rem] leading-[1.55] text-ink outline-none placeholder:text-ink-faint"
         />
 
@@ -104,7 +107,7 @@ export function PostComposer({
               disabled={!canSubmit}
               className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:bg-line-strong disabled:text-ink-faint"
             >
-              {busy ? "Отправка…" : "Опубликовать"}
+              {busy ? t.composer.publishing : t.composer.publish}
             </button>
           </div>
         </div>

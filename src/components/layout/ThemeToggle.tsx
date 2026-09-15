@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/LocaleProvider";
 
 const noopSubscribe = () => () => {};
 
@@ -12,14 +13,11 @@ const ICONS = {
   dark: "M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z",
 } as const;
 
-const OPTIONS = [
-  { value: "light", label: "Светлая" },
-  { value: "system", label: "Системная" },
-  { value: "dark", label: "Тёмная" },
-] as const;
+const OPTIONS = ["light", "system", "dark"] as const;
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
+  const t = useT();
 
   // The active theme only exists in the browser, so the server snapshot is
   // false and the control renders inert until hydration instead of flashing
@@ -33,19 +31,20 @@ export function ThemeToggle() {
   return (
     <div
       role="radiogroup"
-      aria-label="Тема оформления"
+      aria-label={t.theme.group}
       className="inline-flex rounded-full border border-line p-0.5"
     >
       {OPTIONS.map((option) => {
-        const active = mounted && theme === option.value;
+        const active = mounted && theme === option;
+        const label = t.theme[option];
         return (
           <button
-            key={option.value}
+            key={option}
             role="radio"
             aria-checked={active}
-            title={option.label}
-            aria-label={option.label}
-            onClick={() => setTheme(option.value)}
+            title={label}
+            aria-label={label}
+            onClick={() => setTheme(option)}
             className={cn(
               "flex items-center gap-1.5 rounded-full px-2 py-1.5 text-[0.6875rem] font-medium transition-colors sm:px-2.5 sm:py-1",
               active ? "bg-accent text-white" : "text-ink-faint hover:text-ink",
@@ -58,7 +57,7 @@ export function ThemeToggle() {
               className="h-[0.95rem] w-[0.95rem] sm:hidden"
             >
               <path
-                d={ICONS[option.value]}
+                d={ICONS[option]}
                 stroke="currentColor"
                 strokeWidth="1.7"
                 strokeLinecap="round"
@@ -68,7 +67,7 @@ export function ThemeToggle() {
             {/* The icon stands in for the label on a phone so the control does
                 not eat half the header; aria-label carries the meaning at every
                 width, so the label is never duplicated in the accessible name. */}
-            <span className="hidden sm:inline">{option.label}</span>
+            <span className="hidden sm:inline">{label}</span>
           </button>
         );
       })}

@@ -1,16 +1,19 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { getTranslations } from "@/lib/i18n";
 
-export function ConnectionsHeader({
+export async function ConnectionsHeader({
   username,
   active,
 }: {
   username: string;
   active: "followers" | "following";
 }) {
+  const { t } = await getTranslations();
+
   const tabs = [
-    { key: "followers", label: "Подписчики" },
-    { key: "following", label: "Подписки" },
+    { key: "followers", label: t.profile.followersTab },
+    { key: "following", label: t.profile.followsTab },
   ] as const;
 
   return (
@@ -19,7 +22,7 @@ export function ConnectionsHeader({
         <Link
           href={`/profile/${username}`}
           className="rounded-full p-1.5 text-ink-muted transition-colors hover:bg-surface-sunk hover:text-ink"
-          aria-label="Назад в профиль"
+          aria-label={t.profile.backToProfile}
         >
           <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden>
             <path

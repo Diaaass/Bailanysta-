@@ -23,9 +23,15 @@ export function PostSkeleton() {
   );
 }
 
-export function FeedSkeleton({ count = 5 }: { count?: number }) {
+export function FeedSkeleton({
+  count = 5,
+  label,
+}: {
+  count?: number;
+  label: string;
+}) {
   return (
-    <div aria-busy="true" aria-label="Загрузка ленты">
+    <div aria-busy="true" aria-label={label}>
       {Array.from({ length: count }, (_, i) => (
         <PostSkeleton key={i} />
       ))}
@@ -67,9 +73,15 @@ export function ProfileHeaderSkeleton() {
   );
 }
 
-export function NotificationsSkeleton({ count = 6 }: { count?: number }) {
+export function NotificationsSkeleton({
+  count = 6,
+  label,
+}: {
+  count?: number;
+  label: string;
+}) {
   return (
-    <div aria-busy="true" aria-label="Загрузка уведомлений">
+    <div aria-busy="true" aria-label={label}>
       <Skeleton className="my-5 h-7 w-44" />
       <div className="divide-y divide-line">
         {Array.from({ length: count }, (_, i) => (
@@ -86,9 +98,9 @@ export function NotificationsSkeleton({ count = 6 }: { count?: number }) {
   );
 }
 
-export function SearchSkeleton() {
+export function SearchSkeleton({ label }: { label: string }) {
   return (
-    <div aria-busy="true" aria-label="Загрузка поиска">
+    <div aria-busy="true" aria-label={label}>
       <div className="border-b border-line py-5">
         <div className="flex gap-2">
           <Skeleton className="h-11 flex-1 rounded-full" />
@@ -101,7 +113,7 @@ export function SearchSkeleton() {
           ))}
         </div>
       </div>
-      <FeedSkeleton count={3} />
+      <FeedSkeleton count={3} label={label} />
     </div>
   );
 }

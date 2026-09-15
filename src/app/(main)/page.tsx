@@ -3,8 +3,10 @@ import { getSessionUser } from "@/lib/api";
 import { getFeed } from "@/lib/queries/posts";
 import { getViewerChrome } from "@/lib/queries/users";
 import { Feed } from "@/components/post/Feed";
+import { getTranslations } from "@/lib/i18n";
 
 export default async function FeedPage() {
+  const { t } = await getTranslations();
   const session = await getSessionUser();
   if (!session) redirect("/login");
 
@@ -17,13 +19,11 @@ export default async function FeedPage() {
 
   return (
     <div className="px-4 lg:px-0">
-      <h1 className="sr-only">Лента</h1>
+      <h1 className="sr-only">{t.feed.title}</h1>
       <Feed
         initialPosts={posts}
         initialCursor={nextCursor}
         viewer={viewer}
-        emptyTitle="Лента пока пустая"
-        emptyDescription="Напишите первый пост — он появится здесь сразу."
       />
     </div>
   );

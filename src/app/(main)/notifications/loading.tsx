@@ -1,9 +1,12 @@
 import { NotificationsSkeleton } from "@/components/ui/Skeleton";
+import { getTranslations } from "@/lib/i18n";
 
-export default function NotificationsLoading() {
+export default async function NotificationsLoading() {
+  const { t } = await getTranslations();
+
   return (
     <div className="px-4 lg:px-0">
-      <NotificationsSkeleton />
+      <NotificationsSkeleton label={t.notifications.loading} />
     </div>
   );
 }

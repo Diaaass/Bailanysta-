@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { getSuggestedPeople, getTrendingTags } from "@/lib/queries/discover";
 import { Avatar } from "@/components/ui/Avatar";
-import { plural } from "@/lib/utils";
+import { plural } from "@/lib/i18n/plural";
+import { getTranslations } from "@/lib/i18n";
 
 export async function DiscoverRail({ viewerId }: { viewerId: string }) {
+  const { locale, t } = await getTranslations();
   const [tags, people] = await Promise.all([
     getTrendingTags(),
     getSuggestedPeople(viewerId),
@@ -17,7 +19,7 @@ export async function DiscoverRail({ viewerId }: { viewerId: string }) {
         {tags.length > 0 ? (
           <section>
             <h2 className="px-1 text-[0.8125rem] font-medium text-ink-muted">
-              О чём пишут
+              {t.discover.trending}
             </h2>
             <ul className="mt-2.5 flex flex-wrap gap-1.5">
               {tags.map((tag) => (
@@ -40,7 +42,7 @@ export async function DiscoverRail({ viewerId }: { viewerId: string }) {
         {people.length > 0 ? (
           <section>
             <h2 className="px-1 text-[0.8125rem] font-medium text-ink-muted">
-              Кого почитать
+              {t.discover.people}
             </h2>
             <ul className="mt-2.5 space-y-1">
               {people.map((person) => (
@@ -59,7 +61,7 @@ export async function DiscoverRail({ viewerId }: { viewerId: string }) {
                         {person.displayName}
                       </span>
                       <span className="block truncate text-[0.75rem] text-ink-faint">
-                        {plural(person.postCount, "пост", "поста", "постов")}
+                        {plural(locale, person.postCount, t.profile.posts)}
                         {person.bio ? ` · ${person.bio}` : ""}
                       </span>
                     </span>
@@ -71,8 +73,7 @@ export async function DiscoverRail({ viewerId }: { viewerId: string }) {
         ) : null}
 
         <p className="px-1 text-[0.75rem] leading-relaxed text-ink-faint">
-          Поиск здесь понимает смысл: запрос на казахском находит русские и
-          английские посты о том же.
+          {t.discover.note}
         </p>
       </div>
     </aside>

@@ -356,3 +356,41 @@ test.describe("тема", () => {
     await expect(page.locator("html")).not.toHaveClass(/dark/);
   });
 });
+
+test.describe("язык интерфейса", () => {
+  test("переключение языка переживает перезагрузку", async ({ page }) => {
+    const user = uniqueUser();
+    await register(page, user);
+
+    await expect(page.locator("html")).toHaveAttribute("lang", "ru");
+    await expect(page.getByRole("link", { name: "Лента" })).toBeVisible();
+
+    await page.getByRole("radio", { name: "Қазақша" }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "kk");
+    await expect(page.getByRole("link", { name: "Таспа" })).toBeVisible();
+
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("lang", "kk");
+    await expect(page.getByLabel("Жазба мәтіні")).toBeVisible();
+
+    await page.getByRole("radio", { name: "English" }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page.getByRole("button", { name: "Publish" })).toBeVisible();
+  });
+
+  test("посетитель без выбора получает язык из Accept-Language", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext({
+      extraHTTPHeaders: { "x-forwarded-for": "203.0.113.251" },
+      locale: "kk-KZ",
+    });
+    const page = await context.newPage();
+
+    await page.goto("/login");
+    await expect(page.locator("html")).toHaveAttribute("lang", "kk");
+    await expect(page.getByRole("button", { name: "Кіру" })).toBeVisible();
+
+    await context.close();
+  });
+});

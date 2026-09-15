@@ -6,8 +6,10 @@ import type { UserCard } from "@/lib/queries/users";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/i18n/LocaleProvider";
 
 function FollowButton({ user }: { user: UserCard }) {
+  const t = useT();
   const [following, setFollowing] = useState(user.followedByViewer);
   const [busy, setBusy] = useState(false);
 
@@ -40,7 +42,7 @@ function FollowButton({ user }: { user: UserCard }) {
           : "bg-accent text-white hover:bg-accent-hover",
       )}
     >
-      {following ? "Вы подписаны" : "Подписаться"}
+      {following ? t.profile.following : t.profile.follow}
     </button>
   );
 }

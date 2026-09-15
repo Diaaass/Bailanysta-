@@ -31,6 +31,13 @@ async function setTheme(page: Page, theme: "light" | "dark") {
   await page.reload({ waitUntil: "networkidle" });
 }
 
+async function setLocale(page: Page, locale: string) {
+  await page
+    .context()
+    .addCookies([{ name: "locale", value: locale, url: BASE }]);
+  await page.reload({ waitUntil: "networkidle" });
+}
+
 // The Next.js dev overlay renders into a <nextjs-portal> custom element and
 // would otherwise sit in the corner of every screenshot.
 const HIDE_DEV_OVERLAY = "nextjs-portal { display: none !important; }";
@@ -64,6 +71,10 @@ async function main() {
 
   await setTheme(page, "dark");
   await shot(page, "feed-dark");
+
+  await setLocale(page, "kk");
+  await shot(page, "feed-kk");
+  await setLocale(page, "ru");
 
   await page.goto(`${BASE}/search?q=graduated%20from%20university`, {
     waitUntil: "networkidle",

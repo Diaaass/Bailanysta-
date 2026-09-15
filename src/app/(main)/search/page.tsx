@@ -3,10 +3,15 @@ import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/api";
 import { searchPosts } from "@/lib/queries/search";
 import { SearchView } from "@/components/search/SearchView";
+import { getTranslations } from "@/lib/i18n";
 
-export const metadata: Metadata = { title: "Поиск" };
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslations();
+  return { title: t.search.title };
+}
 
 export default async function SearchPage(props: PageProps<"/search">) {
+  const { t } = await getTranslations();
   const viewer = await getSessionUser();
   if (!viewer) redirect("/login");
 
@@ -21,7 +26,7 @@ export default async function SearchPage(props: PageProps<"/search">) {
 
   return (
     <div className="px-4 lg:px-0">
-      <h1 className="sr-only">Поиск</h1>
+      <h1 className="sr-only">{t.search.title}</h1>
       <SearchView initialQuery={query} initialOutcome={outcome} />
     </div>
   );

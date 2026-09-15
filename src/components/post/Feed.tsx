@@ -6,8 +6,10 @@ import { PostCard } from "@/components/post/PostCard";
 import { PostComposer } from "@/components/post/PostComposer";
 import { FeedSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { cn, plural } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { plural } from "@/lib/i18n/plural";
 import { useUpdates } from "@/components/updates/UpdatesProvider";
+import { useLocale, useT } from "@/components/i18n/LocaleProvider";
 
 type Scope = "all" | "following";
 
@@ -29,9 +31,11 @@ export function Feed({
   showComposer = true,
   showScopeSwitch = true,
   authorUsername,
-  emptyTitle = "Здесь пока пусто",
-  emptyDescription = "Напишите первый пост — он появится в ленте сразу.",
+  emptyTitle,
+  emptyDescription,
 }: Props) {
+  const t = useT();
+  const locale = useLocale();
   const [posts, setPosts] = useState(initialPosts);
   const [cursor, setCursor] = useState(initialCursor);
   const [scope, setScope] = useState<Scope>("all");
@@ -75,7 +79,7 @@ export function Feed({
       setPosts((prev) => [...prev, ...data.posts]);
       setCursor(data.nextCursor);
     } catch {
-      setError("Не удалось загрузить ещё посты");
+      setError(t.feed.loadMoreFailed);
     } finally {
       setLoading(false);
     }
@@ -98,7 +102,7 @@ export function Feed({
       clearNewPosts();
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
-      setError("Не удалось обновить ленту");
+      setError(t.feed.refreshFailed);
     } finally {
       setPulling(false);
     }
@@ -116,7 +120,7 @@ export function Feed({
       setPosts(data.posts);
       setCursor(data.nextCursor);
     } catch {
-      setError("Не удалось переключить ленту");
+      setError(t.feed.switchFailed);
     } finally {
       setSwitching(false);
     }
@@ -139,12 +143,7 @@ export function Feed({
 
       {showScopeSwitch ? (
         <div className="flex border-b border-line" role="tablist">
-          {(
-            [
-              ["all", "Все"],
-              ["following", "Подписки"],
-            ] as const
-          ).map(([value, label]) => (
+          {(["all", "following"] as const).map((value) => (
             <button
               key={value}
               role="tab"
@@ -157,7 +156,7 @@ export function Feed({
                   : "text-ink-faint hover:text-ink-muted",
               )}
             >
-              {label}
+              {value === "all" ? t.feed.all : t.feed.following}
               {scope === value ? (
                 <span className="absolute inset-x-0 -bottom-px mx-auto h-0.5 w-12 rounded-full bg-accent" />
               ) : null}
@@ -174,17 +173,20 @@ export function Feed({
             className="rounded-full bg-accent px-4 py-2 text-[0.8125rem] font-medium text-white shadow-lg shadow-ink/10 transition-colors hover:bg-accent-hover disabled:opacity-70"
           >
             {pulling
-              ? "Обновляю…"
-              : `Показать ${plural(newPosts, "новый пост", "новых поста", "новых постов")}`}
+              ? t.feed.refreshing
+              : `${t.feed.showNew} ${plural(locale, newPosts, t.feed.newPost)}`}
           </button>
         </div>
       ) : null}
 
       {switching ? (
-        <FeedSkeleton count={4} />
+        <FeedSkeleton count={4} label={t.feed.skeletonLabel} />
       ) : posts.length === 0 ? (
         <div className="pt-6">
-          <EmptyState title={emptyTitle} description={emptyDescription} />
+          <EmptyState
+            title={emptyTitle ?? t.feed.emptyTitle}
+            description={emptyDescription ?? t.feed.emptyDescription}
+          />
         </div>
       ) : (
         <div className="thread divide-y divide-line">
@@ -212,7 +214,7 @@ export function Feed({
             disabled={loading}
             className="rounded-full border border-line px-5 py-2 text-sm font-medium text-ink-muted transition-colors hover:border-line-strong hover:text-ink disabled:opacity-60"
           >
-            {loading ? "Загрузка…" : "Показать ещё"}
+            {loading ? t.feed.loading : t.feed.loadMore}
           </button>
         </div>
       ) : null}

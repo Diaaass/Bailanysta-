@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Onest } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LocaleProvider } from "@/components/i18n/LocaleProvider";
+import { getTranslations } from "@/lib/i18n";
 import "./globals.css";
 
 const onest = Onest({
@@ -9,19 +11,24 @@ const onest = Onest({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "Bailanysta",
-    template: "%s — Bailanysta",
-  },
-  description:
-    "Әлеуметтік желі — социальная сеть, где посты на казахском, русском и английском находятся одним поиском.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getTranslations();
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+  return {
+    title: {
+      default: "Bailanysta",
+      template: "%s — Bailanysta",
+    },
+    description: t.brand.description,
+  };
+}
+
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const { locale, t } = await getTranslations();
+
   return (
     <html
-      lang="ru"
+      lang={locale}
       suppressHydrationWarning
       className={`${onest.variable} h-full antialiased`}
     >
@@ -32,7 +39,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <LocaleProvider locale={locale} dictionary={t}>
+            {children}
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>

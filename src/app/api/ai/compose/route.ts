@@ -10,30 +10,32 @@ import {
   type LanguageCode,
 } from "@/lib/ai/prompts";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
+import { getTranslations } from "@/lib/i18n";
+import { translateIssue } from "@/lib/i18n/translate-issue";
+import { format } from "@/lib/i18n/format";
 
 const bodySchema = z.object({
   mode: z.enum(COMPOSE_MODES),
-  text: z.string().trim().min(1, "Нужен текст").max(1000),
+  text: z.string().trim().min(1, "postEmpty").max(1000),
   targetLang: z.enum(Object.keys(LANGUAGES) as [LanguageCode, ...LanguageCode[]])
     .optional(),
 });
 
 export async function POST(request: NextRequest) {
+  const { t } = await getTranslations();
+
   const viewer = await getSessionUser();
   if (!viewer) return unauthorized();
 
-  if (!isAiConfigured()) {
-    return jsonError(
-      "AI-функции выключены: в окружении не задан AI_API_KEY",
-      503,
-    );
-  }
+  if (!isAiConfigured()) return jsonError(t.api.aiDisabled, 503);
 
   const limit = await checkRateLimit("ai:compose", viewer.id, RATE_LIMITS.ai);
   if (!limit.allowed) {
     return Response.json(
       {
-        error: `Слишком много запросов. Попробуйте через ${Math.ceil(limit.retryAfterSeconds / 60)} мин.`,
+        error: format(t.api.retryInMinutes, {
+          n: Math.ceil(limit.retryAfterSeconds / 60),
+        }),
       },
       { status: 429, headers: { "Retry-After": String(limit.retryAfterSeconds) } },
     );
@@ -43,12 +45,12 @@ export async function POST(request: NextRequest) {
   try {
     raw = await request.json();
   } catch {
-    return badRequest("Invalid JSON body");
+    return badRequest(t.validation.invalidBody);
   }
 
   const parsed = bodySchema.safeParse(raw);
   if (!parsed.success) {
-    return badRequest(parsed.error.issues[0]?.message ?? "Invalid request");
+    return badRequest(translateIssue(parsed.error.issues[0]?.message, t));
   }
 
   const { mode, text, targetLang } = parsed.data;
@@ -61,18 +63,18 @@ export async function POST(request: NextRequest) {
     );
 
     if (!result) {
-      return jsonError("Модель вернула пустой ответ", 502);
+      return jsonError(t.api.aiEmpty, 502);
     }
 
     return Response.json({ result: result.slice(0, 500) });
   } catch (e) {
     if (e instanceof AiUnavailableError) {
-      return jsonError(e.message, 503);
+      return jsonError(t.api.aiDisabled, 503);
     }
     if (e instanceof Error && e.name === "AbortError") {
-      return jsonError("Модель не ответила вовремя. Попробуйте ещё раз.", 504);
+      return jsonError(t.api.aiTimeout, 504);
     }
     console.error("[ai/compose]", e);
-    return jsonError("Не удалось получить ответ модели", 502);
+    return jsonError(t.api.aiFailed, 502);
   }
 }

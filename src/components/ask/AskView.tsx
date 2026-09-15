@@ -4,7 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { absoluteTime, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { absoluteTime } from "@/lib/i18n/time";
+import { useT } from "@/components/i18n/LocaleProvider";
 
 type Source = {
   id: string;
@@ -14,12 +16,6 @@ type Source = {
 };
 
 type Answer = { answer: string; sources: Source[] };
-
-const EXAMPLES = [
-  "О чём я чаще всего писал за последний месяц?",
-  "Что я писал про базы данных?",
-  "Какие темы повторяются в моих постах?",
-];
 
 // The model is asked to cite sources as [1], [2]. Turning those into anchors
 // makes the answer checkable instead of something the reader has to trust.
@@ -41,6 +37,7 @@ function renderWithCitations(text: string, onCite: (index: number) => void) {
 }
 
 export function AskView() {
+  const t = useT();
   const [question, setQuestion] = useState("");
   const [result, setResult] = useState<Answer | null>(null);
   const [loading, setLoading] = useState(false);
@@ -50,7 +47,7 @@ export function AskView() {
   async function ask(text: string) {
     const trimmed = text.trim();
     if (trimmed.length < 3) {
-      setError("Сформулируйте вопрос хотя бы в несколько слов");
+      setError(t.ask.tooShort);
       return;
     }
 
@@ -66,10 +63,10 @@ export function AskView() {
         body: JSON.stringify({ question: trimmed }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error ?? "Не удалось получить ответ");
+      if (!res.ok) throw new Error(data?.error ?? t.ask.failed);
       setResult(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось получить ответ");
+      setError(e instanceof Error ? e.message : t.ask.failed);
       setResult(null);
     } finally {
       setLoading(false);
@@ -80,11 +77,10 @@ export function AskView() {
     <div>
       <div className="border-b border-line py-5">
         <h1 className="text-[1.25rem] font-semibold tracking-tight text-ink">
-          Спросите о своих постах
+          {t.ask.title}
         </h1>
         <p className="mt-1.5 max-w-[60ch] text-[0.875rem] leading-relaxed text-ink-muted">
-          Модель читает только ваши записи — за последний месяц и те, что ближе
-          всего к вопросу по смыслу. Ответ помечен ссылками на конкретные посты.
+          {t.ask.description}
         </p>
 
         <form
@@ -95,14 +91,14 @@ export function AskView() {
           className="mt-4 flex gap-2"
         >
           <label htmlFor="question" className="sr-only">
-            Вопрос о ваших постах
+            {t.ask.label}
           </label>
           <input
             id="question"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             maxLength={300}
-            placeholder="О чём я писал в последнее время?"
+            placeholder={t.ask.placeholder}
             className="min-w-0 flex-1 rounded-full border border-line bg-surface px-4 py-2.5 text-[0.9375rem] text-ink outline-none transition-colors focus:border-accent"
           />
           <button
@@ -110,12 +106,12 @@ export function AskView() {
             disabled={loading}
             className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:bg-line-strong disabled:text-ink-faint"
           >
-            {loading ? "Думаю…" : "Спросить"}
+            {loading ? t.ask.thinking : t.ask.submit}
           </button>
         </form>
 
         <div className="mt-2 flex flex-wrap gap-1.5">
-          {EXAMPLES.map((example) => (
+          {t.ask.examples.map((example) => (
             <button
               key={example}
               type="button"
@@ -153,7 +149,7 @@ export function AskView() {
           {result.sources.length ? (
             <section className="mt-7">
               <h2 className="text-[0.8125rem] font-medium text-ink-muted">
-                Источники
+                {t.ask.sources}
               </h2>
               <ol className="mt-2 space-y-2">
                 {result.sources.map((source, i) => (
@@ -175,10 +171,10 @@ export function AskView() {
                           {source.content}
                         </span>
                         <span className="mt-0.5 block text-[0.75rem] text-ink-faint">
-                          {absoluteTime(source.createdAt)}
+                          {absoluteTime(source.createdAt, t)}
                           {source.retrievedBy === "semantic"
-                            ? " · найден по смыслу"
-                            : " · из недавних"}
+                            ? ` · ${t.ask.bySemantic}`
+                            : ` · ${t.ask.byRecent}`}
                         </span>
                       </span>
                     </Link>
@@ -191,8 +187,8 @@ export function AskView() {
       ) : (
         <div className="pt-6">
           <EmptyState
-            title="Задайте вопрос"
-            description="Например: о чём я чаще всего писал, какие темы повторяются, что я говорил про конкретную технологию."
+            title={t.ask.promptTitle}
+            description={t.ask.promptDescription}
           />
         </div>
       )}

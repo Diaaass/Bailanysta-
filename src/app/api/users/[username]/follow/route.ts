@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { follows, notifications } from "@/lib/db/schema";
 import { getSessionUser, jsonError, notFound, unauthorized } from "@/lib/api";
 import { getUserByUsername } from "@/lib/queries/users";
+import { getTranslations } from "@/lib/i18n";
 
 async function countFollowers(userId: string) {
   const [row] = await db
@@ -24,7 +25,7 @@ export async function POST(
   const target = await getUserByUsername(username);
   if (!target) return notFound("User");
   if (target.id === viewer.id) {
-    return jsonError("Нельзя подписаться на себя", 400);
+    return jsonError((await getTranslations()).t.api.cannotFollowSelf, 400);
   }
 
   const inserted = await db

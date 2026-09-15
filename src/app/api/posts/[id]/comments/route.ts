@@ -9,6 +9,8 @@ import {
   unauthorized,
 } from "@/lib/api";
 import { commentContentSchema } from "@/lib/validation";
+import { getTranslations } from "@/lib/i18n";
+import { translateIssue } from "@/lib/i18n/translate-issue";
 
 export async function GET(
   _request: NextRequest,
@@ -50,6 +52,7 @@ export async function POST(
   request: NextRequest,
   ctx: RouteContext<"/api/posts/[id]/comments">,
 ) {
+  const { t } = await getTranslations();
   const { id } = await ctx.params;
   const viewer = await getSessionUser();
   if (!viewer) return unauthorized();
@@ -65,14 +68,14 @@ export async function POST(
   try {
     body = await request.json();
   } catch {
-    return badRequest("Invalid JSON body");
+    return badRequest(t.validation.invalidBody);
   }
 
   const parsed = commentContentSchema.safeParse(
     (body as { content?: unknown })?.content,
   );
   if (!parsed.success) {
-    return badRequest(parsed.error.issues[0]?.message ?? "Invalid content");
+    return badRequest(translateIssue(parsed.error.issues[0]?.message, t));
   }
 
   const [created] = await db

@@ -5,8 +5,15 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { useUpdates } from "@/components/updates/UpdatesProvider";
+import { useT } from "@/components/i18n/LocaleProvider";
+import type { Dictionary } from "@/lib/i18n/dictionaries/ru";
 
-type Item = { href: string; label: string; icon: ReactNode; match: (p: string) => boolean };
+type Item = {
+  href: string;
+  label: keyof Dictionary["nav"];
+  icon: ReactNode;
+  match: (p: string) => boolean;
+};
 
 const icon = (d: string) => (
   <svg viewBox="0 0 24 24" fill="none" aria-hidden className="h-[1.3rem] w-[1.3rem]">
@@ -17,31 +24,31 @@ const icon = (d: string) => (
 const ITEMS: Item[] = [
   {
     href: "/",
-    label: "Лента",
+    label: "feed",
     icon: icon("M4 6h16M4 12h16M4 18h10"),
     match: (p) => p === "/",
   },
   {
     href: "/search",
-    label: "Поиск",
+    label: "search",
     icon: icon("M11 19a8 8 0 100-16 8 8 0 000 16zM21 21l-4.3-4.3"),
     match: (p) => p.startsWith("/search"),
   },
   {
     href: "/ask",
-    label: "Анализ",
+    label: "ask",
     icon: icon("M12 3a9 9 0 100 18 9 9 0 000-18zM9.1 9a3 3 0 015.8 1c0 2-3 3-3 3M12 17h.01"),
     match: (p) => p.startsWith("/ask"),
   },
   {
     href: "/notifications",
-    label: "Уведомления",
+    label: "notifications",
     icon: icon("M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8M13.7 21a2 2 0 01-3.4 0"),
     match: (p) => p.startsWith("/notifications"),
   },
   {
     href: "/profile/me",
-    label: "Профиль",
+    label: "profile",
     icon: icon("M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"),
     match: (p) => p.startsWith("/profile"),
   },
@@ -50,9 +57,10 @@ const ITEMS: Item[] = [
 export function Nav() {
   const pathname = usePathname();
   const { unread } = useUpdates();
+  const t = useT();
 
   return (
-    <nav aria-label="Основная навигация">
+    <nav aria-label={t.nav.main}>
       <ul className="flex justify-around lg:block lg:space-y-0.5">
         {ITEMS.map((item) => {
           const active = item.match(pathname);
@@ -78,7 +86,7 @@ export function Nav() {
                     </span>
                   ) : null}
                 </span>
-                <span>{item.label}</span>
+                <span>{t.nav[item.label]}</span>
               </Link>
             </li>
           );

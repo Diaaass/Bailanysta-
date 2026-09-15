@@ -1,10 +1,13 @@
 import { ImageResponse } from "next/og";
+import { getTranslations } from "@/lib/i18n";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "Bailanysta — социальная сеть с семантическим поиском";
 
 export default async function Image() {
+  const { t } = await getTranslations();
+
   return new ImageResponse(
     (
       <div
@@ -37,10 +40,10 @@ export default async function Image() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           <div style={{ fontSize: 60, lineHeight: 1.15, letterSpacing: -1 }}>
-            Поиск, который понимает смысл,
+            {t.brand.taglineLead}
           </div>
           <div style={{ fontSize: 60, lineHeight: 1.15, color: "#3cb4d6" }}>
-            а не только буквы
+            {t.brand.taglineAccent}
           </div>
         </div>
 

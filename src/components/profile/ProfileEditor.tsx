@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { profileUpdateSchema } from "@/lib/validation";
 import { cn } from "@/lib/utils";
 import { Modal } from "@/components/ui/Modal";
+import { useT } from "@/components/i18n/LocaleProvider";
+import { translateIssue } from "@/lib/i18n/translate-issue";
 
 const BIO_LIMIT = 280;
 
@@ -17,6 +19,7 @@ export function ProfileEditor({
   initialBio: string;
   onClose: () => void;
 }) {
+  const t = useT();
   const router = useRouter();
   const [displayName, setDisplayName] = useState(initialDisplayName);
   const [bio, setBio] = useState(initialBio);
@@ -31,7 +34,7 @@ export function ProfileEditor({
     e.preventDefault();
     const parsed = profileUpdateSchema.safeParse({ displayName, bio });
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Проверьте поля");
+      setError(translateIssue(parsed.error.issues[0]?.message, t));
       return;
     }
 
@@ -45,25 +48,25 @@ export function ProfileEditor({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.error ?? "Не удалось сохранить профиль");
+        throw new Error(data?.error ?? t.profile.saveFailed);
       }
       onClose();
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Не удалось сохранить профиль");
+      setError(e instanceof Error ? e.message : t.profile.saveFailed);
       setBusy(false);
     }
   }
 
   return (
-    <Modal title="Изменить профиль" titleId={titleId} onClose={onClose}>
+    <Modal title={t.profile.editTitle} titleId={titleId} onClose={onClose}>
       <form onSubmit={save} className="mt-4 space-y-4">
         <div>
           <label
             htmlFor="displayName"
             className="block text-[0.8125rem] font-medium text-ink"
           >
-            Имя
+            {t.profile.name}
           </label>
           <input
             id="displayName"
@@ -79,7 +82,7 @@ export function ProfileEditor({
             htmlFor="bio"
             className="block text-[0.8125rem] font-medium text-ink"
           >
-            О себе
+            {t.profile.bio}
           </label>
           <textarea
             id="bio"
@@ -87,7 +90,7 @@ export function ProfileEditor({
             onChange={(e) => setBio(e.target.value)}
             rows={3}
             maxLength={BIO_LIMIT}
-            placeholder="Чем занимаетесь, о чём пишете"
+            placeholder={t.profile.bioPlaceholder}
             className="mt-1.5 w-full resize-none rounded-lg border border-line bg-surface-sunk px-3 py-2.5 text-[0.9375rem] leading-relaxed text-ink outline-none transition-colors focus:border-accent placeholder:text-ink-faint"
           />
           <p
@@ -115,14 +118,14 @@ export function ProfileEditor({
             onClick={onClose}
             className="rounded-full px-4 py-2 text-sm font-medium text-ink-muted transition-colors hover:text-ink"
           >
-            Отмена
+            {t.post.cancel}
           </button>
           <button
             type="submit"
             disabled={busy}
             className="rounded-full bg-accent px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:bg-line-strong disabled:text-ink-faint"
           >
-            {busy ? "Сохранение…" : "Сохранить"}
+            {busy ? t.profile.saving : t.post.save}
           </button>
         </div>
       </form>

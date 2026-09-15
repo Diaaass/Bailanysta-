@@ -4,7 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { Avatar } from "@/components/ui/Avatar";
 import { commentContentSchema } from "@/lib/validation";
-import { absoluteTime, relativeTime } from "@/lib/utils";
+import { absoluteTime, relativeTime } from "@/lib/i18n/time";
+import { useLocale, useT } from "@/components/i18n/LocaleProvider";
+import { translateIssue } from "@/lib/i18n/translate-issue";
 
 export type CommentItem = {
   id: string;
@@ -27,6 +29,8 @@ export function CommentThread({
   initialComments: CommentItem[];
   viewer: { displayName: string; avatarSeed: string };
 }) {
+  const t = useT();
+  const locale = useLocale();
   const [comments, setComments] = useState(initialComments);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -36,7 +40,7 @@ export function CommentThread({
     e.preventDefault();
     const parsed = commentContentSchema.safeParse(draft);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Проверьте текст");
+      setError(translateIssue(parsed.error.issues[0]?.message, t));
       return;
     }
 
@@ -53,14 +57,14 @@ export function CommentThread({
       setComments((prev) => [...prev, data.comment]);
       setDraft("");
     } catch {
-      setError("Комментарий не отправился. Попробуйте ещё раз.");
+      setError(t.comments.failed);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <section aria-label="Комментарии">
+    <section aria-label={t.comments.section}>
       <form onSubmit={submit} className="flex gap-3 border-b border-line py-5">
         <Avatar
           seed={viewer.avatarSeed}
@@ -73,8 +77,8 @@ export function CommentThread({
             onChange={(e) => setDraft(e.target.value)}
             rows={2}
             maxLength={300}
-            placeholder="Пікір қалдырыңыз… Напишите комментарий…"
-            aria-label="Текст комментария"
+            placeholder={t.comments.placeholder}
+            aria-label={t.comments.label}
             className="w-full resize-none bg-transparent text-[0.9375rem] leading-[1.55] text-ink outline-none placeholder:text-ink-faint"
           />
           <div className="mt-1 flex items-center justify-end gap-3">
@@ -86,7 +90,7 @@ export function CommentThread({
               disabled={busy || draft.trim().length === 0}
               className="rounded-full bg-accent px-4 py-1.5 text-[0.8125rem] font-medium text-white transition-colors hover:bg-accent-hover disabled:bg-line-strong disabled:text-ink-faint"
             >
-              {busy ? "Отправка…" : "Ответить"}
+              {busy ? t.comments.sending : t.comments.submit}
             </button>
           </div>
           {error ? (
@@ -99,7 +103,7 @@ export function CommentThread({
 
       {comments.length === 0 ? (
         <p className="py-8 text-center text-sm text-ink-faint">
-          Комментариев пока нет. Ваш будет первым.
+          {t.comments.empty}
         </p>
       ) : (
         <ul className="divide-y divide-line">
@@ -124,10 +128,10 @@ export function CommentThread({
                     @{comment.author.username}
                   </span>
                   <span
-                    title={absoluteTime(comment.createdAt)}
+                    title={absoluteTime(comment.createdAt, t)}
                     className="text-[0.8125rem] text-ink-faint"
                   >
-                    {relativeTime(comment.createdAt)}
+                    {relativeTime(comment.createdAt, locale, t)}
                   </span>
                 </div>
                 <p className="mt-1 whitespace-pre-wrap break-words text-[0.9375rem] leading-[1.55] text-ink">

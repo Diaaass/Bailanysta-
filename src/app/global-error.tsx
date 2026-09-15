@@ -1,7 +1,20 @@
 "use client";
 
+import { getDictionary } from "@/lib/i18n/dictionaries";
+import { isLocale, DEFAULT_LOCALE, LOCALE_COOKIE } from "@/lib/i18n/locales";
+
 // Last-resort boundary: it replaces the root layout, so it ships its own
-// <html> and cannot rely on the app's providers or styles.
+// <html> and cannot rely on the app's providers or styles. That includes the
+// locale provider, so the language is read straight off the cookie.
+function cookieLocale() {
+  if (typeof document === "undefined") return DEFAULT_LOCALE;
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${LOCALE_COOKIE}=([^;]*)`),
+  );
+  const value = match?.[1] && decodeURIComponent(match[1]);
+  return isLocale(value) ? value : DEFAULT_LOCALE;
+}
+
 export default function GlobalError({
   error,
   reset,
@@ -9,8 +22,11 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const locale = cookieLocale();
+  const t = getDictionary(locale);
+
   return (
-    <html lang="ru">
+    <html lang={locale}>
       <body
         style={{
           margin: 0,
@@ -24,10 +40,10 @@ export default function GlobalError({
       >
         <div style={{ maxWidth: "34rem", padding: "2rem", textAlign: "center" }}>
           <h1 style={{ fontSize: "1.375rem", margin: 0 }}>
-            Приложение не запустилось
+            {t.errors.appFailedTitle}
           </h1>
           <p style={{ marginTop: "0.75rem", lineHeight: 1.6, color: "#59646f" }}>
-            Произошёл сбой на уровне всего приложения. Перезагрузите страницу.
+            {t.errors.appFailedDescription}
           </p>
           <button
             onClick={reset}
@@ -42,11 +58,11 @@ export default function GlobalError({
               cursor: "pointer",
             }}
           >
-            Перезагрузить
+            {t.errors.reload}
           </button>
           {error.digest ? (
             <p style={{ marginTop: "1.5rem", fontSize: "0.75rem", color: "#8a95a1" }}>
-              Код ошибки: {error.digest}
+              {t.errors.code}: {error.digest}
             </p>
           ) : null}
         </div>

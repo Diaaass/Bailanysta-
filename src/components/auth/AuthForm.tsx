@@ -5,29 +5,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { safeCallbackUrl } from "@/lib/utils";
+import { useT } from "@/components/i18n/LocaleProvider";
 
 type Mode = "login" | "register";
 
-const COPY = {
-  login: {
-    title: "С возвращением",
-    subtitle: "Войдите, чтобы читать ленту и писать посты.",
-    submit: "Войти",
-    switchText: "Ещё нет аккаунта?",
-    switchLink: "Создать",
-    switchHref: "/register",
-  },
-  register: {
-    title: "Создайте аккаунт",
-    subtitle: "Имя пользователя понадобится для входа и адреса профиля.",
-    submit: "Создать аккаунт",
-    switchText: "Уже зарегистрированы?",
-    switchLink: "Войти",
-    switchHref: "/login",
-  },
-} as const;
-
 export function AuthForm({ mode }: { mode: Mode }) {
+  const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
@@ -38,7 +21,24 @@ export function AuthForm({ mode }: { mode: Mode }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const copy = COPY[mode];
+  const copy =
+    mode === "login"
+      ? {
+          title: t.auth.loginTitle,
+          subtitle: t.auth.loginSubtitle,
+          submit: t.auth.login,
+          switchText: t.auth.noAccount,
+          switchLink: t.auth.create,
+          switchHref: "/register",
+        }
+      : {
+          title: t.auth.registerTitle,
+          subtitle: t.auth.registerSubtitle,
+          submit: t.auth.register,
+          switchText: t.auth.haveAccount,
+          switchLink: t.auth.login,
+          switchHref: "/login",
+        };
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,7 +54,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         });
         if (!res.ok) {
           const data = await res.json().catch(() => null);
-          throw new Error(data?.error ?? "Не удалось создать аккаунт");
+          throw new Error(data?.error ?? t.auth.registerFailed);
         }
       }
 
@@ -65,13 +65,13 @@ export function AuthForm({ mode }: { mode: Mode }) {
       });
 
       if (result?.error) {
-        throw new Error("Неверное имя пользователя или пароль");
+        throw new Error(t.auth.wrongCredentials);
       }
 
       router.push(callbackUrl);
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Что-то пошло не так");
+      setError(e instanceof Error ? e.message : t.auth.unknownError);
       setBusy(false);
     }
   }
@@ -89,7 +89,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
         {mode === "register" ? (
           <Field
             id="displayName"
-            label="Отображаемое имя"
+            label={t.auth.displayName}
             value={displayName}
             onChange={setDisplayName}
             autoComplete="name"
@@ -100,23 +100,23 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
         <Field
           id="username"
-          label="Имя пользователя"
+          label={t.auth.username}
           value={username}
           onChange={(v) => setUsername(v.toLowerCase())}
           autoComplete="username"
           placeholder="aigerim"
-          hint={mode === "register" ? "Латиница, цифры и подчёркивание" : undefined}
+          hint={mode === "register" ? t.auth.usernameHint : undefined}
           required
         />
 
         <Field
           id="password"
-          label="Пароль"
+          label={t.auth.password}
           type="password"
           value={password}
           onChange={setPassword}
           autoComplete={mode === "login" ? "current-password" : "new-password"}
-          hint={mode === "register" ? "Минимум 8 символов" : undefined}
+          hint={mode === "register" ? t.auth.passwordHint : undefined}
           required
         />
 
@@ -134,7 +134,7 @@ export function AuthForm({ mode }: { mode: Mode }) {
           disabled={busy}
           className="w-full rounded-full bg-accent py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:bg-line-strong disabled:text-ink-faint"
         >
-          {busy ? "Подождите…" : copy.submit}
+          {busy ? t.auth.waiting : copy.submit}
         </button>
       </form>
 
@@ -147,9 +147,9 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
       {mode === "login" ? (
         <p className="mt-8 border-t border-line pt-5 text-center text-[0.8125rem] leading-relaxed text-ink-faint">
-          Для быстрого просмотра есть готовый аккаунт:
+          {t.auth.demoNote}
           <br />
-          <span className="text-ink-muted">demo</span> — пароль{" "}
+          <span className="text-ink-muted">demo</span> — {t.auth.demoPassword}{" "}
           <span className="text-ink-muted">demo1234</span>
         </p>
       ) : null}

@@ -10,12 +10,15 @@ import { Avatar } from "@/components/ui/Avatar";
 import { getViewerChrome } from "@/lib/queries/users";
 import { DiscoverRail } from "@/components/layout/DiscoverRail";
 import { UpdatesProvider } from "@/components/updates/UpdatesProvider";
+import { LocaleToggle } from "@/components/layout/LocaleToggle";
+import { getTranslations } from "@/lib/i18n";
 
 export default async function MainLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  const { t } = await getTranslations();
   const session = await getSessionUser();
   if (!session) redirect("/login");
 
@@ -37,7 +40,7 @@ export default async function MainLayout({
         href="#main"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
       >
-        Перейти к содержимому
+        {t.nav.skipToContent}
       </a>
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-line bg-paper/90 px-4 py-3 backdrop-blur lg:hidden">
         <Link href="/" className="flex items-center gap-2 text-ink">
@@ -46,7 +49,10 @@ export default async function MainLayout({
             Bailanysta
           </span>
         </Link>
-        <ThemeToggle />
+        <div className="flex items-center gap-2">
+          <LocaleToggle />
+          <ThemeToggle />
+        </div>
       </header>
 
       <aside className="hidden w-60 shrink-0 lg:block">
@@ -64,7 +70,10 @@ export default async function MainLayout({
           <Nav />
 
           <div className="mt-auto space-y-4 px-1">
-            <ThemeToggle />
+            <div className="flex flex-wrap items-center gap-2">
+              <ThemeToggle />
+              <LocaleToggle />
+            </div>
             <div className="flex items-center gap-2.5 border-t border-line pt-4">
               <Avatar
                 seed={viewer.avatarSeed}
@@ -87,7 +96,7 @@ export default async function MainLayout({
               >
                 <button
                   type="submit"
-                  title="Выйти"
+                  title={t.nav.signOut}
                   className="rounded-full p-1.5 text-ink-faint transition-colors hover:bg-surface-sunk hover:text-ink"
                 >
                   <svg
@@ -104,7 +113,7 @@ export default async function MainLayout({
                       strokeLinejoin="round"
                     />
                   </svg>
-                  <span className="sr-only">Выйти</span>
+                  <span className="sr-only">{t.nav.signOut}</span>
                 </button>
               </form>
             </div>

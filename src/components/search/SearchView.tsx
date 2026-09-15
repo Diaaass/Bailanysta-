@@ -6,16 +6,17 @@ import type { SearchOutcome, SearchResult } from "@/lib/queries/search";
 import { PostCard } from "@/components/post/PostCard";
 import { FeedSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { useT } from "@/components/i18n/LocaleProvider";
+import { format } from "@/lib/i18n/format";
+import type { Dictionary } from "@/lib/i18n/dictionaries/ru";
 
+// Left untranslated on purpose: they demonstrate that a query in one language
+// finds posts in the other two.
 const EXAMPLES = ["оқу", "векторный поиск", "design systems", "#rag"];
 
-function noticeFor(outcome: SearchOutcome) {
-  if (!outcome.semanticAvailable) {
-    return "Векторный поиск выключен — работает только текстовое совпадение.";
-  }
-  if (outcome.semanticError) {
-    return "Векторный поиск недоступен, показаны текстовые совпадения.";
-  }
+function noticeFor(outcome: SearchOutcome, t: Dictionary) {
+  if (!outcome.semanticAvailable) return t.search.disabled;
+  if (outcome.semanticError) return t.search.unavailable;
   return null;
 }
 
@@ -26,6 +27,7 @@ export function SearchView({
   initialQuery: string;
   initialOutcome: SearchOutcome | null;
 }) {
+  const t = useT();
   const router = useRouter();
 
   const [query, setQuery] = useState(initialQuery);
@@ -37,7 +39,7 @@ export function SearchView({
     initialOutcome?.semanticAvailable ?? false,
   );
   const [notice, setNotice] = useState<string | null>(
-    initialOutcome ? noticeFor(initialOutcome) : null,
+    initialOutcome ? noticeFor(initialOutcome, t) : null,
   );
   const [loading, setLoading] = useState(false);
   const [nextOffset, setNextOffset] = useState<number | null>(
@@ -69,9 +71,9 @@ export function SearchView({
       setResults(outcome.results);
       setSemantic(outcome.semanticAvailable);
       setNextOffset(outcome.nextOffset);
-      setNotice(noticeFor(outcome));
+      setNotice(noticeFor(outcome, t));
     } catch {
-      setNotice("Поиск не отработал. Попробуйте ещё раз.");
+      setNotice(t.search.failed);
     } finally {
       setLoading(false);
     }
@@ -89,7 +91,7 @@ export function SearchView({
       setResults((prev) => [...(prev ?? []), ...outcome.results]);
       setNextOffset(outcome.nextOffset);
     } catch {
-      setNotice("Не удалось загрузить ещё результаты");
+      setNotice(t.search.loadMoreFailed);
     } finally {
       setLoadingMore(false);
     }
@@ -105,14 +107,14 @@ export function SearchView({
         className="border-b border-line py-5"
       >
         <label htmlFor="q" className="sr-only">
-          Поисковый запрос
+          {t.search.label}
         </label>
         <div className="flex gap-2">
           <input
             id="q"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Іздеу… Найти пост"
+            placeholder={t.search.placeholder}
             className="min-w-0 flex-1 rounded-full border border-line bg-surface px-4 py-2.5 text-[0.9375rem] text-ink outline-none transition-colors focus:border-accent"
           />
           <button
@@ -120,13 +122,12 @@ export function SearchView({
             disabled={loading}
             className="rounded-full bg-accent px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:bg-line-strong disabled:text-ink-faint"
           >
-            Найти
+            {t.search.submit}
           </button>
         </div>
 
         <p className="mt-3 text-[0.8125rem] leading-relaxed text-ink-muted">
-          Поиск понимает смысл, а не только буквы: запрос на одном языке находит
-          посты на двух других.
+          {t.search.hint}
         </p>
 
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -150,19 +151,19 @@ export function SearchView({
       ) : null}
 
       {loading ? (
-        <FeedSkeleton count={3} />
+        <FeedSkeleton count={3} label={t.search.loading} />
       ) : results === null ? (
         <div className="pt-6">
           <EmptyState
-            title="Что ищем?"
-            description="Введите слово или хэштег. Попробуйте казахский запрос — найдутся русские и английские посты того же смысла."
+            title={t.search.promptTitle}
+            description={t.search.promptDescription}
           />
         </div>
       ) : results.length === 0 ? (
         <div className="pt-6">
           <EmptyState
-            title="Ничего не нашлось"
-            description={`По запросу «${term}» совпадений нет. Попробуйте переформулировать.`}
+            title={t.search.emptyTitle}
+            description={format(t.search.emptyDescription, { query: term })}
           />
         </div>
       ) : (
@@ -172,7 +173,7 @@ export function SearchView({
             aria-live="polite"
             className="py-3 text-[0.8125rem] text-ink-faint"
           >
-            {`Найдено: ${results.length}${semantic ? " · с учётом смысла" : ""}`}
+            {`${t.search.found}: ${results.length}${semantic ? ` · ${t.search.withMeaning}` : ""}`}
           </p>
           <div className="thread divide-y divide-line">
             {results.map((result) => (
@@ -196,7 +197,7 @@ export function SearchView({
                 {result.matchedBy.includes("semantic") &&
                 !result.matchedBy.includes("text") ? (
                   <p className="pb-3 pl-[3.375rem] text-[0.75rem] text-ink-faint">
-                    найдено по смыслу, без совпадения слов
+                    {t.search.semanticOnly}
                   </p>
                 ) : null}
               </div>
@@ -210,7 +211,7 @@ export function SearchView({
                 disabled={loadingMore}
                 className="rounded-full border border-line px-5 py-2 text-sm font-medium text-ink-muted transition-colors hover:border-line-strong hover:text-ink disabled:opacity-60"
               >
-                {loadingMore ? "Загрузка…" : "Показать ещё"}
+                {loadingMore ? t.feed.loading : t.feed.loadMore}
               </button>
             </div>
           ) : null}
