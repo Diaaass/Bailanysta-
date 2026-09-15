@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     const result = await chat(
       systemPrompt(mode as ComposeMode, targetLang),
       text,
-      { maxTokens: mode === "hashtags" ? 60 : 400 },
+      { maxTokens: mode === "hashtags" ? 600 : 1200 },
     );
 
     if (!result) {

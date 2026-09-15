@@ -1,4 +1,5 @@
 import "server-only";
+import { EMBEDDING_DIMENSIONS } from "@/lib/db/schema";
 
 const BASE_URL = process.env.AI_BASE_URL?.replace(/\/$/, "");
 const API_KEY = process.env.AI_API_KEY;
@@ -47,10 +48,12 @@ async function call<T>(path: string, body: unknown, timeoutMs: number) {
 
 type ChatResponse = { choices: { message: { content: string } }[] };
 
+// Reasoning models bill their internal thinking against max_tokens, so a
+// budget sized to the visible answer alone gets truncated mid-sentence.
 export async function chat(
   system: string,
   user: string,
-  { maxTokens = 400, temperature = 0.7 } = {},
+  { maxTokens = 1200, temperature = 0.7 } = {},
 ) {
   if (!isAiConfigured()) throw new AiUnavailableError();
 
@@ -78,13 +81,21 @@ export async function embed(input: string) {
 
   const data = await call<EmbeddingResponse>(
     "/embeddings",
-    { model: EMBEDDING_MODEL, input },
+    // Providers whose native width differs from the column (Gemini defaults to
+    // 3072) honour this and return a vector the schema can store.
+    { model: EMBEDDING_MODEL, input, dimensions: EMBEDDING_DIMENSIONS },
     15_000,
   );
 
   const vector = data.data?.[0]?.embedding;
   if (!Array.isArray(vector) || vector.length === 0) {
     throw new Error("Embedding response contained no vector");
+  }
+  if (vector.length !== EMBEDDING_DIMENSIONS) {
+    throw new Error(
+      `Embedding width ${vector.length} does not match the column (${EMBEDDING_DIMENSIONS}). ` +
+        "Change AI_EMBEDDING_MODEL or migrate the posts.embedding column.",
+    );
   }
   return vector;
 }

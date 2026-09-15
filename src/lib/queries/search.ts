@@ -15,9 +15,13 @@ export type SearchOutcome = {
   semanticError: string | null;
 };
 
-// Cosine distance in pgvector is 0 (identical) to 2 (opposite). Anything past
-// this is unrelated in practice and only adds noise to the result list.
-const MAX_DISTANCE = 0.62;
+// Thresholds measured against the seeded corpus with gemini-embedding-001
+// (scripts/probe-distance.ts). Real matches land at 0.22-0.37 cosine distance,
+// the first unrelated post at 0.43, and a query with no matching topic at all
+// bottoms out around 0.47 - so 0.42 separates signal from noise and correctly
+// returns nothing for an off-topic query. Retune after changing the model.
+const MAX_DISTANCE = 0.42;
+const MIN_DISTANCE = 0.15;
 const TEXT_WEIGHT = 0.45;
 const SEMANTIC_WEIGHT = 0.55;
 
@@ -107,7 +111,15 @@ export async function searchPosts(
         const distance = Number(row.distance);
         if (!Number.isFinite(distance) || distance > MAX_DISTANCE) continue;
 
-        const similarity = 1 - distance / MAX_DISTANCE;
+        // Normalised across the useful band rather than the full 0..MAX range,
+        // so the strongest hit scores near 1 instead of near 0.17.
+        const similarity = Math.min(
+          1,
+          Math.max(
+            0,
+            (MAX_DISTANCE - distance) / (MAX_DISTANCE - MIN_DISTANCE),
+          ),
+        );
         const existing = merged.get(row.id);
 
         if (existing) {
