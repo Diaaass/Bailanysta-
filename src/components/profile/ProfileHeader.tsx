@@ -4,12 +4,14 @@ import { useState } from "react";
 import type { Profile } from "@/lib/queries/users";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
+import { ProfileEditor } from "@/components/profile/ProfileEditor";
 
 export function ProfileHeader({ profile }: { profile: Profile }) {
   const [following, setFollowing] = useState(profile.followedByViewer);
   const [followers, setFollowers] = useState(profile.followerCount);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
 
   async function toggleFollow() {
     const next = !following;
@@ -49,7 +51,14 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
           size="lg"
         />
 
-        {!profile.isViewer ? (
+        {profile.isViewer ? (
+          <button
+            onClick={() => setEditing(true)}
+            className="rounded-full border border-line px-5 py-2 text-sm font-medium text-ink transition-colors hover:border-line-strong hover:bg-surface-sunk"
+          >
+            Изменить профиль
+          </button>
+        ) : (
           <button
             onClick={toggleFollow}
             disabled={busy}
@@ -62,7 +71,7 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
           >
             {following ? "Вы подписаны" : "Подписаться"}
           </button>
-        ) : null}
+        )}
       </div>
 
       <h1 className="mt-4 text-[1.5rem] font-semibold leading-tight tracking-tight text-ink">
@@ -74,6 +83,13 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
         <p className="mt-3 max-w-[52ch] text-[0.9375rem] leading-relaxed text-ink">
           {profile.bio}
         </p>
+      ) : profile.isViewer ? (
+        <button
+          onClick={() => setEditing(true)}
+          className="mt-3 text-[0.9375rem] text-accent hover:underline"
+        >
+          Добавить описание профиля
+        </button>
       ) : null}
 
       <dl className="mt-4 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[0.875rem]">
@@ -103,6 +119,14 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
         <p role="alert" className="mt-3 text-[0.8125rem] text-danger">
           {error}
         </p>
+      ) : null}
+
+      {editing ? (
+        <ProfileEditor
+          initialDisplayName={profile.displayName}
+          initialBio={profile.bio}
+          onClose={() => setEditing(false)}
+        />
       ) : null}
     </header>
   );

@@ -7,17 +7,22 @@ import { Logo } from "@/components/layout/Logo";
 import { Nav } from "@/components/layout/Nav";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Avatar } from "@/components/ui/Avatar";
-import { getUnreadCount } from "@/lib/queries/notifications";
+import { getViewerChrome } from "@/lib/queries/users";
 
 export default async function MainLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const viewer = await getSessionUser();
+  const session = await getSessionUser();
+  if (!session) redirect("/login");
+
+  // Name and avatar come from the database, not the JWT: renaming yourself
+  // would otherwise leave the old name in the sidebar until the next sign-in.
+  const viewer = await getViewerChrome(session.id);
   if (!viewer) redirect("/login");
 
-  const unread = await getUnreadCount(viewer.id);
+  const unread = viewer.unreadCount;
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col lg:flex-row lg:gap-10 lg:px-6">

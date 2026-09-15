@@ -1,10 +1,16 @@
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/api";
 import { getFeed } from "@/lib/queries/posts";
+import { getViewerChrome } from "@/lib/queries/users";
 import { Feed } from "@/components/post/Feed";
 
 export default async function FeedPage() {
-  const viewer = await getSessionUser();
+  const session = await getSessionUser();
+  if (!session) redirect("/login");
+
+  // Fresh identity, not the JWT copy: an edited display name has to reach the
+  // composer avatar immediately.
+  const viewer = await getViewerChrome(session.id);
   if (!viewer) redirect("/login");
 
   const { posts, nextCursor } = await getFeed({ viewerId: viewer.id });

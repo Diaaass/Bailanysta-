@@ -33,3 +33,19 @@ export const commentContentSchema = z
   .trim()
   .min(1, "Comment cannot be empty")
   .max(300, "Comment must be at most 300 characters");
+
+export const displayNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Имя не может быть пустым")
+  .max(64, "Имя не длиннее 64 символов");
+
+export const bioSchema = z
+  .string()
+  .trim()
+  .max(280, "О себе — не длиннее 280 символов");
+
+export const profileUpdateSchema = z.object({
+  displayName: displayNameSchema,
+  bio: bioSchema,
+});

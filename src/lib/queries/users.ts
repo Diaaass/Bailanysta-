@@ -88,3 +88,50 @@ export async function isFollowing(followerId: string, followingId: string) {
     .limit(1);
   return Boolean(row);
 }
+
+export type ViewerChrome = {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarSeed: string;
+  unreadCount: number;
+};
+
+// The shell reads identity from the database rather than the JWT: a renamed
+// user would otherwise keep the old name in the sidebar until they signed out.
+export async function getViewerChrome(
+  userId: string,
+): Promise<ViewerChrome | null> {
+  const [row] = await db
+    .select({
+      id: users.id,
+      username: users.username,
+      displayName: users.displayName,
+      avatarSeed: users.avatarSeed,
+      unreadCount: sql<number>`(
+        select count(*)::int from notifications
+        where notifications.user_id = users.id and notifications.is_read = false
+      )`,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  return row ? { ...row, unreadCount: Number(row.unreadCount) } : null;
+}
+
+export async function updateProfile(
+  userId: string,
+  data: { displayName: string; bio: string },
+) {
+  const [row] = await db
+    .update(users)
+    .set({ displayName: data.displayName, bio: data.bio })
+    .where(eq(users.id, userId))
+    .returning({
+      username: users.username,
+      displayName: users.displayName,
+      bio: users.bio,
+    });
+  return row ?? null;
+}

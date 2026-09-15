@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { comments, users } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/api";
 import { getPostById } from "@/lib/queries/posts";
+import { getViewerChrome } from "@/lib/queries/users";
 import { SinglePost } from "@/components/post/SinglePost";
 import { CommentThread } from "@/components/post/CommentThread";
 
@@ -23,7 +24,10 @@ export async function generateMetadata(
 
 export default async function PostPage(props: PageProps<"/post/[id]">) {
   const { id } = await props.params;
-  const viewer = await getSessionUser();
+  const session = await getSessionUser();
+  if (!session) redirect("/login");
+
+  const viewer = await getViewerChrome(session.id);
   if (!viewer) redirect("/login");
 
   const post = await getPostById(id, viewer.id);

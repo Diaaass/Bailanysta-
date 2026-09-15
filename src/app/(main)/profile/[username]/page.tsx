@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/api";
-import { getProfile } from "@/lib/queries/users";
+import { getProfile, getViewerChrome } from "@/lib/queries/users";
 import { getFeed } from "@/lib/queries/posts";
 import { Feed } from "@/components/post/Feed";
 import { ProfileHeader } from "@/components/profile/ProfileHeader";
@@ -17,7 +17,10 @@ export default async function ProfilePage(
   props: PageProps<"/profile/[username]">,
 ) {
   const { username } = await props.params;
-  const viewer = await getSessionUser();
+  const session = await getSessionUser();
+  if (!session) redirect("/login");
+
+  const viewer = await getViewerChrome(session.id);
   if (!viewer) redirect("/login");
 
   // "me" is a stable link for the navigation, resolved to the real handle so
