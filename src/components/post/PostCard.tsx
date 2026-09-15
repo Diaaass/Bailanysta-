@@ -7,6 +7,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { PostContent } from "@/components/post/PostContent";
 import { absoluteTime, cn, relativeTime } from "@/lib/utils";
 import { postContentSchema } from "@/lib/validation";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 type Props = {
   post: FeedPost;
@@ -19,6 +20,7 @@ export function PostCard({ post, onChange, onDelete }: Props) {
   const [draft, setDraft] = useState(post.content);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   async function toggleLike() {
     const next = !post.likedByViewer;
@@ -73,7 +75,6 @@ export function PostCard({ post, onChange, onDelete }: Props) {
   }
 
   async function remove() {
-    if (!confirm("Удалить пост? Отменить это нельзя.")) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
@@ -82,6 +83,7 @@ export function PostCard({ post, onChange, onDelete }: Props) {
     } catch {
       setError("Не удалось удалить пост");
       setBusy(false);
+      setConfirmingDelete(false);
     }
   }
 
@@ -210,7 +212,7 @@ export function PostCard({ post, onChange, onDelete }: Props) {
                 Изменить
               </button>
               <button
-                onClick={remove}
+                onClick={() => setConfirmingDelete(true)}
                 disabled={busy}
                 className="rounded-full px-2.5 py-1 text-[0.8125rem] text-ink-faint transition-colors hover:text-danger disabled:opacity-50"
               >
@@ -224,6 +226,17 @@ export function PostCard({ post, onChange, onDelete }: Props) {
           <p role="alert" className="mt-2 text-[0.8125rem] text-danger">
             {error}
           </p>
+        ) : null}
+
+        {confirmingDelete ? (
+          <ConfirmDialog
+            title="Удалить пост?"
+            description="Пост исчезнет из ленты и из поиска вместе с лайками и комментариями. Отменить это нельзя."
+            confirmLabel="Удалить"
+            busy={busy}
+            onConfirm={remove}
+            onCancel={() => setConfirmingDelete(false)}
+          />
         ) : null}
       </div>
     </article>

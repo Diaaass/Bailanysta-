@@ -26,6 +26,13 @@ export default async function MainLayout({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col lg:flex-row lg:gap-10 lg:px-6">
+      {/* First stop for a keyboard user: skip the whole navigation rail. */}
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-full focus:bg-accent focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-white"
+      >
+        Перейти к содержимому
+      </a>
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-line bg-paper/90 px-4 py-3 backdrop-blur lg:hidden">
         <Link href="/" className="flex items-center gap-2 text-ink">
           <Logo className="h-6 w-6 text-accent" />
@@ -99,7 +106,7 @@ export default async function MainLayout({
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 pb-20 lg:max-w-[38rem] lg:pb-16">
+      <main id="main" tabIndex={-1} className="min-w-0 flex-1 pb-20 lg:max-w-[38rem] lg:pb-16">
         {children}
       </main>
 

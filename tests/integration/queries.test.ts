@@ -219,6 +219,55 @@ describe("searchPosts", () => {
   });
 });
 
+describe("searchPosts pagination", () => {
+  // Every fixture post contains a vowel, so this matches the whole corpus and
+  // gives pagination something to walk through.
+  const BROAD = "о";
+
+  it("splits results into pages without repeats or gaps", async () => {
+    const seen: string[] = [];
+    let offset = 0;
+
+    for (let page = 0; page < 10; page++) {
+      const outcome = await searchPosts(BROAD, null, { limit: 2, offset });
+      seen.push(...outcome.results.map((r) => r.id));
+      if (outcome.nextOffset === null) break;
+      offset = outcome.nextOffset;
+    }
+
+    expect(new Set(seen).size).toBe(seen.length);
+
+    const all = await searchPosts(BROAD, null, { limit: 100 });
+    expect(seen.sort()).toEqual(all.results.map((r) => r.id).sort());
+  });
+
+  it("reports hasMore only while pages remain", async () => {
+    const first = await searchPosts(BROAD, null, { limit: 1 });
+    expect(first.hasMore).toBe(true);
+    expect(first.nextOffset).toBe(1);
+
+    const everything = await searchPosts(BROAD, null, { limit: 100 });
+    expect(everything.hasMore).toBe(false);
+    expect(everything.nextOffset).toBeNull();
+  });
+
+  it("keeps ranking stable across pages", async () => {
+    const whole = await searchPosts(BROAD, null, { limit: 100 });
+    const firstPage = await searchPosts(BROAD, null, { limit: 3, offset: 0 });
+    const secondPage = await searchPosts(BROAD, null, { limit: 3, offset: 3 });
+
+    expect([...firstPage.results, ...secondPage.results].map((r) => r.id)).toEqual(
+      whole.results.slice(0, 6).map((r) => r.id),
+    );
+  });
+
+  it("returns an empty page past the end", async () => {
+    const outcome = await searchPosts(BROAD, null, { limit: 5, offset: 500 });
+    expect(outcome.results).toHaveLength(0);
+    expect(outcome.hasMore).toBe(false);
+  });
+});
+
 describe("updateProfile", () => {
   it("persists a new display name and bio", async () => {
     const updated = await updateProfile(fx.users.chloe, {

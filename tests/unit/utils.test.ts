@@ -1,5 +1,12 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
-import { avatarStyle, cn, initials, relativeTime } from "@/lib/utils";
+import {
+  avatarStyle,
+  cn,
+  initials,
+  plural,
+  pluralWord,
+  relativeTime,
+} from "@/lib/utils";
 
 afterEach(() => vi.useRealTimers());
 
@@ -61,5 +68,29 @@ describe("relativeTime", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-15T12:00:00Z"));
     expect(relativeTime("2026-06-15T12:00:00Z")).toContain("мес");
+  });
+});
+
+describe("plural", () => {
+  it.each([
+    [1, "пост"],
+    [2, "поста"],
+    [4, "поста"],
+    [5, "постов"],
+    [11, "постов"],
+    [12, "постов"],
+    [14, "постов"],
+    [21, "пост"],
+    [22, "поста"],
+    [25, "постов"],
+    [101, "пост"],
+    [111, "постов"],
+    [0, "постов"],
+  ])("%i -> %s", (n, expected) => {
+    expect(pluralWord(n, "пост", "поста", "постов")).toBe(expected);
+  });
+
+  it("prefixes the number", () => {
+    expect(plural(2, "лайк", "лайка", "лайков")).toBe("2 лайка");
   });
 });

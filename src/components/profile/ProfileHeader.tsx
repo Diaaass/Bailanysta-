@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Profile } from "@/lib/queries/users";
 import { Avatar } from "@/components/ui/Avatar";
-import { cn } from "@/lib/utils";
+import { cn, pluralWord } from "@/lib/utils";
 import { ProfileEditor } from "@/components/profile/ProfileEditor";
 
 export function ProfileHeader({ profile }: { profile: Profile }) {
@@ -99,7 +99,9 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
           <dd className="font-semibold tabular-nums text-ink">
             {profile.postCount}
           </dd>
-          <span className="text-ink-muted">постов</span>
+          <span className="text-ink-muted">
+            {pluralWord(profile.postCount, "пост", "поста", "постов")}
+          </span>
         </div>
         <div>
           <dt className="sr-only">Подписчиков</dt>
@@ -111,7 +113,9 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
               <span className="font-semibold tabular-nums text-ink">
                 {followers}
               </span>
-              <span className="text-ink-muted">подписчиков</span>
+              <span className="text-ink-muted">
+                {pluralWord(followers, "подписчик", "подписчика", "подписчиков")}
+              </span>
             </Link>
           </dd>
         </div>
@@ -125,7 +129,9 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
               <span className="font-semibold tabular-nums text-ink">
                 {profile.followingCount}
               </span>
-              <span className="text-ink-muted">подписок</span>
+              <span className="text-ink-muted">
+                {pluralWord(profile.followingCount, "подписка", "подписки", "подписок")}
+              </span>
             </Link>
           </dd>
         </div>

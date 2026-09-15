@@ -1,13 +1,19 @@
 import type { NextRequest } from "next/server";
 import { getSessionUser, unauthorized } from "@/lib/api";
-import { searchPosts } from "@/lib/queries/search";
+import { SEARCH_PAGE_SIZE, searchPosts } from "@/lib/queries/search";
 
 export async function GET(request: NextRequest) {
   const viewer = await getSessionUser();
   if (!viewer) return unauthorized();
 
-  const query = request.nextUrl.searchParams.get("q") ?? "";
-  const outcome = await searchPosts(query, viewer.id);
+  const params = request.nextUrl.searchParams;
+  const query = params.get("q") ?? "";
 
-  return Response.json(outcome);
+  const rawOffset = Number(params.get("offset"));
+  const offset =
+    Number.isFinite(rawOffset) && rawOffset > 0 ? Math.floor(rawOffset) : 0;
+
+  return Response.json(
+    await searchPosts(query, viewer.id, { limit: SEARCH_PAGE_SIZE, offset }),
+  );
 }

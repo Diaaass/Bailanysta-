@@ -13,7 +13,11 @@ export type SearchOutcome = {
   results: SearchResult[];
   semanticAvailable: boolean;
   semanticError: string | null;
+  hasMore: boolean;
+  nextOffset: number | null;
 };
+
+export const SEARCH_PAGE_SIZE = 15;
 
 // Thresholds measured against the seeded corpus with gemini-embedding-001
 // (scripts/probe-distance.ts). Real matches land at 0.22-0.37 cosine distance,
@@ -60,12 +64,24 @@ function baseSelection(viewerId?: string | null) {
 export async function searchPosts(
   rawQuery: string,
   viewerId?: string | null,
-  limit = 25,
+  { limit = SEARCH_PAGE_SIZE, offset = 0 } = {},
 ): Promise<SearchOutcome> {
   const query = rawQuery.trim();
   if (!query) {
-    return { results: [], semanticAvailable: false, semanticError: null };
+    return {
+      results: [],
+      semanticAvailable: false,
+      semanticError: null,
+      hasMore: false,
+      nextOffset: null,
+    };
   }
+
+  // Ranking is by relevance, not time, so a timestamp cursor cannot express a
+  // position in the list. Each page therefore re-reads the candidate set to a
+  // depth of offset + limit and slices it: correct at any depth, and the cost
+  // grows only as far as the reader actually scrolls.
+  const depth = offset + limit + 1;
 
   const escaped = query.replace(/[\\%_]/g, (m) => `\\${m}`);
 
@@ -75,7 +91,7 @@ export async function searchPosts(
     .innerJoin(users, eq(users.id, posts.authorId))
     .where(ilike(posts.content, `%${escaped}%`))
     .orderBy(desc(posts.createdAt))
-    .limit(limit);
+    .limit(depth);
 
   const merged = new Map<string, SearchResult>();
 
@@ -103,7 +119,7 @@ export async function searchPosts(
         .innerJoin(users, eq(users.id, posts.authorId))
         .where(isNotNull(posts.embedding))
         .orderBy(sql`${posts.embedding} <=> ${vector}::vector`)
-        .limit(limit);
+        .limit(depth);
 
       semanticAvailable = true;
 
@@ -139,9 +155,18 @@ export async function searchPosts(
     }
   }
 
-  const results = [...merged.values()]
-    .sort((a, b) => b.score - a.score || b.createdAt.localeCompare(a.createdAt))
-    .slice(0, limit);
+  const ranked = [...merged.values()].sort(
+    (a, b) => b.score - a.score || b.createdAt.localeCompare(a.createdAt),
+  );
 
-  return { results, semanticAvailable, semanticError };
+  const page = ranked.slice(offset, offset + limit);
+  const hasMore = ranked.length > offset + limit;
+
+  return {
+    results: page,
+    semanticAvailable,
+    semanticError,
+    hasMore,
+    nextOffset: hasMore ? offset + limit : null,
+  };
 }

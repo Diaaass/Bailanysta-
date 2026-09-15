@@ -40,6 +40,10 @@ export function SearchView({
     initialOutcome ? noticeFor(initialOutcome) : null,
   );
   const [loading, setLoading] = useState(false);
+  const [nextOffset, setNextOffset] = useState<number | null>(
+    initialOutcome?.nextOffset ?? null,
+  );
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Searching is something a person does, not state to synchronise, so the
   // request lives in the handler instead of an effect.
@@ -52,6 +56,7 @@ export function SearchView({
     if (!next) {
       setResults(null);
       setNotice(null);
+      setNextOffset(null);
       return;
     }
 
@@ -63,11 +68,30 @@ export function SearchView({
       const outcome: SearchOutcome = await res.json();
       setResults(outcome.results);
       setSemantic(outcome.semanticAvailable);
+      setNextOffset(outcome.nextOffset);
       setNotice(noticeFor(outcome));
     } catch {
       setNotice("Поиск не отработал. Попробуйте ещё раз.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadMore() {
+    if (nextOffset === null || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await fetch(
+        `/api/search?q=${encodeURIComponent(term)}&offset=${nextOffset}`,
+      );
+      if (!res.ok) throw new Error();
+      const outcome: SearchOutcome = await res.json();
+      setResults((prev) => [...(prev ?? []), ...outcome.results]);
+      setNextOffset(outcome.nextOffset);
+    } catch {
+      setNotice("Не удалось загрузить ещё результаты");
+    } finally {
+      setLoadingMore(false);
     }
   }
 
@@ -143,9 +167,12 @@ export function SearchView({
         </div>
       ) : (
         <>
-          <p className="py-3 text-[0.8125rem] text-ink-faint">
-            Найдено: {results.length}
-            {semantic ? " · с учётом смысла" : ""}
+          <p
+            role="status"
+            aria-live="polite"
+            className="py-3 text-[0.8125rem] text-ink-faint"
+          >
+            {`Найдено: ${results.length}${semantic ? " · с учётом смысла" : ""}`}
           </p>
           <div className="thread divide-y divide-line">
             {results.map((result) => (
@@ -175,6 +202,18 @@ export function SearchView({
               </div>
             ))}
           </div>
+
+          {nextOffset !== null ? (
+            <div className="py-6 text-center">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="rounded-full border border-line px-5 py-2 text-sm font-medium text-ink-muted transition-colors hover:border-line-strong hover:text-ink disabled:opacity-60"
+              >
+                {loadingMore ? "Загрузка…" : "Показать ещё"}
+              </button>
+            </div>
+          ) : null}
         </>
       )}
     </div>

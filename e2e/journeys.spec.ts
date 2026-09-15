@@ -55,11 +55,14 @@ test.describe("посты", () => {
     await article.getByRole("button", { name: "Сохранить" }).click();
     await expect(page.getByText(edited).first()).toBeVisible();
 
-    page.on("dialog", (dialog) => dialog.accept());
     await page
       .locator("article", { hasText: edited })
       .getByRole("button", { name: "Удалить" })
       .click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole("button", { name: "Удалить" }).click();
     await expect(page.getByText(edited)).toHaveCount(0);
   });
 
@@ -213,6 +216,73 @@ test.describe("поиск", () => {
     await expect(
       page.getByText(/Векторный поиск выключен/),
     ).toBeVisible();
+  });
+});
+
+test.describe("клавиатура", () => {
+  test("ссылка «к содержимому» ведёт на основную колонку", async ({ page }) => {
+    await register(page, uniqueUser());
+
+    await page.keyboard.press("Tab");
+    const skip = page.getByRole("link", { name: "Перейти к содержимому" });
+    await expect(skip).toBeFocused();
+
+    await page.keyboard.press("Enter");
+    await expect(page.locator("main")).toBeFocused();
+  });
+
+  test("диалог удаления закрывается по Escape и возвращает фокус", async ({
+    page,
+  }) => {
+    const user = uniqueUser();
+    await register(page, user);
+    const text = `Пост для отмены ${user.username}`;
+    await publish(page, text);
+
+    const remove = page
+      .locator("article", { hasText: text })
+      .getByRole("button", { name: "Удалить" });
+    await remove.click();
+
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toHaveCount(0);
+    // Focus must return to the control that opened the dialog, not to the body.
+    await expect(remove).toBeFocused();
+    await expect(page.getByText(text).first()).toBeVisible();
+  });
+
+  test("Tab не уходит за пределы открытого диалога", async ({ page }) => {
+    const user = uniqueUser();
+    await register(page, user);
+
+    await page.goto(`/profile/${user.username}`);
+    await page.getByRole("button", { name: "Изменить профиль" }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press("Tab");
+      const inside = await page.evaluate(() =>
+        Boolean(
+          document.activeElement?.closest('[role="dialog"]'),
+        ),
+      );
+      expect(inside).toBe(true);
+    }
+  });
+
+  test("пост отправляется по Ctrl+Enter", async ({ page }) => {
+    const user = uniqueUser();
+    await register(page, user);
+
+    const text = `Отправлено с клавиатуры ${user.username}`;
+    await page.goto("/");
+    await page.getByLabel("Текст поста").fill(text);
+    await page.keyboard.press("Control+Enter");
+
+    await expect(page.getByText(text).first()).toBeVisible();
   });
 });
 
