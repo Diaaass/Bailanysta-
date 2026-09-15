@@ -13,11 +13,10 @@ export function uniqueUser() {
 }
 
 export async function register(page: Page, user: ReturnType<typeof uniqueUser>) {
-  // Specs that involve two people register a second user in the same context.
-  // An authenticated visitor is redirected away from /register, so the session
-  // is dropped first to keep this helper usable at any point in a test.
-  await page.context().clearCookies();
   await page.goto("/register");
+  // An authenticated visitor is bounced off /register by the proxy, so the
+  // form has to be on screen before anything is typed into it.
+  await page.waitForSelector("#username");
   await page.fill("#displayName", user.displayName);
   await page.fill("#username", user.username);
   await page.fill("#password", user.password);

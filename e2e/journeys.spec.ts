@@ -8,10 +8,26 @@ test.describe("доступ", () => {
     await page.goto("/search");
     await expect(page).toHaveURL(/\/login\?callbackUrl=%2Fsearch/);
 
-    const user = uniqueUser();
-    await register(page, user);
+    await register(page, uniqueUser());
     // The register flow lands on the feed; the guard is what we assert above.
     await expect(page).toHaveURL("/");
+  });
+
+  test("выход и повторный вход возвращают ту же учётную запись", async ({
+    page,
+  }) => {
+    const user = uniqueUser();
+    await register(page, user);
+
+    const text = `Пост до выхода ${user.username}`;
+    await publish(page, text);
+
+    await page.getByRole("button", { name: "Выйти" }).click();
+    await page.waitForURL(/\/login/);
+
+    await login(page, user.username, user.password);
+    await expect(page).toHaveURL("/");
+    await expect(page.getByText(text).first()).toBeVisible();
   });
 
   test("метаданные отдаются без сессии", async ({ request }) => {
@@ -60,16 +76,19 @@ test.describe("посты", () => {
 });
 
 test.describe("социальные действия", () => {
-  test("лайк держится после перезагрузки", async ({ page }) => {
+  // Two people means two sessions: a second browser context is cleaner and more
+  // deterministic than clearing cookies inside one.
+  test("лайк держится после перезагрузки", async ({ page, browser }) => {
     const author = uniqueUser();
     await register(page, author);
     const text = `Пост для лайка ${author.username}`;
     await publish(page, text);
 
-    const reader = uniqueUser();
-    await register(page, reader);
+    const readerContext = await browser.newContext();
+    const readerPage = await readerContext.newPage();
+    await register(readerPage, uniqueUser());
 
-    const article = page.locator("article", { hasText: text });
+    const article = readerPage.locator("article", { hasText: text });
     const like = article.getByRole("button", { name: "Поставить лайк" });
     await like.click();
 
@@ -77,12 +96,14 @@ test.describe("социальные действия", () => {
       article.getByRole("button", { name: "Убрать лайк" }),
     ).toBeVisible();
 
-    await page.reload();
+    await readerPage.reload();
     await expect(
-      page
+      readerPage
         .locator("article", { hasText: text })
         .getByRole("button", { name: "Убрать лайк" }),
     ).toBeVisible();
+
+    await readerContext.close();
   });
 
   test("комментарий появляется на странице поста", async ({ page }) => {
@@ -103,28 +124,31 @@ test.describe("социальные действия", () => {
     await expect(page.getByText(comment)).toBeVisible();
   });
 
-  test("подписка меняет ленту подписок", async ({ page }) => {
+  test("подписка меняет ленту подписок", async ({ page, browser }) => {
     const author = uniqueUser();
     await register(page, author);
     const text = `Пост автора ${author.username}`;
     await publish(page, text);
 
-    const follower = uniqueUser();
-    await register(page, follower);
+    const followerContext = await browser.newContext();
+    const followerPage = await followerContext.newPage();
+    await register(followerPage, uniqueUser());
 
-    await page.goto("/");
-    await page.getByRole("tab", { name: "Подписки" }).click();
-    await expect(page.getByText(text)).toHaveCount(0);
+    await followerPage.goto("/");
+    await followerPage.getByRole("tab", { name: "Подписки" }).click();
+    await expect(followerPage.getByText(text)).toHaveCount(0);
 
-    await page.goto(`/profile/${author.username}`);
-    await page.getByRole("button", { name: "Подписаться" }).click();
+    await followerPage.goto(`/profile/${author.username}`);
+    await followerPage.getByRole("button", { name: "Подписаться" }).click();
     await expect(
-      page.getByRole("button", { name: "Вы подписаны" }),
+      followerPage.getByRole("button", { name: "Вы подписаны" }),
     ).toBeVisible();
 
-    await page.goto("/");
-    await page.getByRole("tab", { name: "Подписки" }).click();
-    await expect(page.getByText(text).first()).toBeVisible();
+    await followerPage.goto("/");
+    await followerPage.getByRole("tab", { name: "Подписки" }).click();
+    await expect(followerPage.getByText(text).first()).toBeVisible();
+
+    await followerContext.close();
   });
 });
 
