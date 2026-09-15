@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
+
+const noopSubscribe = () => () => {};
 
 const OPTIONS = [
   { value: "light", label: "Светлая" },
@@ -12,11 +14,15 @@ const OPTIONS = [
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
 
-  // Theme is only known in the browser, so the control renders inert until
-  // hydration instead of flashing the wrong state.
-  useEffect(() => setMounted(true), []);
+  // The active theme only exists in the browser, so the server snapshot is
+  // false and the control renders inert until hydration instead of flashing
+  // the wrong selection.
+  const mounted = useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false,
+  );
 
   return (
     <div
