@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { follows, posts, users } from "@/lib/db/schema";
+import { follows, users } from "@/lib/db/schema";
 
 export type Profile = {
   id: string;
@@ -28,20 +28,24 @@ export async function getProfile(
       bio: users.bio,
       avatarSeed: users.avatarSeed,
       createdAt: users.createdAt,
+      // Drizzle only qualifies column names when the outer query has a join.
+      // This select has none, so interpolated references would render bare and
+      // "id" inside the subquery would bind to the subquery's own table
+      // instead of users. These stay fully qualified by hand.
       postCount: sql<number>`(
-        select count(*)::int from ${posts} where ${posts.authorId} = ${users.id}
+        select count(*)::int from posts where posts.author_id = users.id
       )`,
       followerCount: sql<number>`(
-        select count(*)::int from ${follows} where ${follows.followingId} = ${users.id}
+        select count(*)::int from follows where follows.following_id = users.id
       )`,
       followingCount: sql<number>`(
-        select count(*)::int from ${follows} where ${follows.followerId} = ${users.id}
+        select count(*)::int from follows where follows.follower_id = users.id
       )`,
       followedByViewer: viewerId
         ? sql<boolean>`exists(
-            select 1 from ${follows}
-            where ${follows.followerId} = ${viewerId}
-              and ${follows.followingId} = ${users.id}
+            select 1 from follows
+            where follows.follower_id = ${viewerId}
+              and follows.following_id = users.id
           )`
         : sql<boolean>`false`,
     })
