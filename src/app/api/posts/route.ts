@@ -6,6 +6,7 @@ import { badRequest, getSessionUser, unauthorized } from "@/lib/api";
 import { FEED_PAGE_SIZE, getFeed, getPostById } from "@/lib/queries/posts";
 import { postContentSchema } from "@/lib/validation";
 import { indexPost } from "@/lib/ai/indexing";
+import { detectLanguage } from "@/lib/language";
 
 export async function GET(request: NextRequest) {
   const viewer = await getSessionUser();
@@ -48,7 +49,11 @@ export async function POST(request: NextRequest) {
 
   const [created] = await db
     .insert(posts)
-    .values({ authorId: viewer.id, content: parsed.data })
+    .values({
+      authorId: viewer.id,
+      content: parsed.data,
+      lang: detectLanguage(parsed.data),
+    })
     .returning({ id: posts.id });
 
   // Awaited on purpose: a serverless function is frozen once it responds, so

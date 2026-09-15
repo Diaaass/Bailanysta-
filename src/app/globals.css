@@ -17,6 +17,15 @@
   --ember: #c07c12;
   --ember-wash: #f7ead2;
   --danger: #a33a2e;
+
+  /* One hue per language: the multilingual feed is the product, so the mix is
+     worth seeing at a glance rather than only on reading. */
+  --lang-kk: #0e7c6a;
+  --lang-kk-wash: #d9efe9;
+  --lang-ru: #6d4aa8;
+  --lang-ru-wash: #e8e1f5;
+  --lang-en: #a86a12;
+  --lang-en-wash: #f6ead4;
 }
 
 .dark {
@@ -34,6 +43,13 @@
   --ember: #e0a33f;
   --ember-wash: #33260f;
   --danger: #e0715f;
+
+  --lang-kk: #4fc3ab;
+  --lang-kk-wash: #10322c;
+  --lang-ru: #a98ae0;
+  --lang-ru-wash: #241c3a;
+  --lang-en: #e0a851;
+  --lang-en-wash: #33260f;
 }
 
 @theme inline {
@@ -51,6 +67,12 @@
   --color-ember: var(--ember);
   --color-ember-wash: var(--ember-wash);
   --color-danger: var(--danger);
+  --color-lang-kk: var(--lang-kk);
+  --color-lang-kk-wash: var(--lang-kk-wash);
+  --color-lang-ru: var(--lang-ru);
+  --color-lang-ru-wash: var(--lang-ru-wash);
+  --color-lang-en: var(--lang-en);
+  --color-lang-en-wash: var(--lang-en-wash);
   --font-sans: var(--font-onest), ui-sans-serif, system-ui, sans-serif;
 }
 

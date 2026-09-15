@@ -12,6 +12,7 @@ import {
 import { getPostById } from "@/lib/queries/posts";
 import { postContentSchema } from "@/lib/validation";
 import { indexPost } from "@/lib/ai/indexing";
+import { detectLanguage } from "@/lib/language";
 
 export async function GET(
   _request: NextRequest,
@@ -57,7 +58,12 @@ export async function PATCH(
 
   await db
     .update(posts)
-    .set({ content: parsed.data, updatedAt: new Date(), embedding: null })
+    .set({
+      content: parsed.data,
+      lang: detectLanguage(parsed.data),
+      updatedAt: new Date(),
+      embedding: null,
+    })
     .where(eq(posts.id, id));
 
   // The old vector describes text that no longer exists, so it is cleared

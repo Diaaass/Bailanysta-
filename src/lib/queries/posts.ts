@@ -1,6 +1,7 @@
 import { and, desc, eq, lt, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { comments, follows, likes, posts, users } from "@/lib/db/schema";
+import type { LanguageCode } from "@/lib/language";
 
 export const FEED_PAGE_SIZE = 20;
 
@@ -10,6 +11,7 @@ export type FeedPost = {
   createdAt: string;
   updatedAt: string;
   edited: boolean;
+  lang: LanguageCode | null;
   author: {
     id: string;
     username: string;
@@ -36,6 +38,7 @@ function selection(viewerId?: string | null) {
   return {
     id: posts.id,
     content: posts.content,
+    lang: posts.lang,
     createdAt: posts.createdAt,
     updatedAt: posts.updatedAt,
     authorId: users.id,
@@ -60,6 +63,7 @@ function selection(viewerId?: string | null) {
 type RawRow = {
   id: string;
   content: string;
+  lang: string | null;
   createdAt: Date;
   updatedAt: Date;
   authorId: string;
@@ -78,6 +82,7 @@ export function toFeedPost(row: RawRow, viewerId?: string | null): FeedPost {
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
     edited: row.updatedAt.getTime() - row.createdAt.getTime() > 1000,
+    lang: (row.lang as LanguageCode | null) ?? null,
     author: {
       id: row.authorId,
       username: row.authorUsername,

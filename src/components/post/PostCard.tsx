@@ -8,6 +8,7 @@ import { PostContent } from "@/components/post/PostContent";
 import { absoluteTime, cn, relativeTime } from "@/lib/utils";
 import { postContentSchema } from "@/lib/validation";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { LanguageBadge } from "@/components/ui/LanguageBadge";
 
 type Props = {
   post: FeedPost;
@@ -117,6 +118,9 @@ export function PostCard({ post, onChange, onDelete }: Props) {
           </Link>
           {post.edited ? (
             <span className="text-[0.8125rem] text-ink-faint">изменено</span>
+          ) : null}
+          {post.lang ? (
+            <LanguageBadge lang={post.lang} />
           ) : null}
         </div>
 

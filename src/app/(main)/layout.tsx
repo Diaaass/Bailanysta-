@@ -8,6 +8,7 @@ import { Nav } from "@/components/layout/Nav";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Avatar } from "@/components/ui/Avatar";
 import { getViewerChrome } from "@/lib/queries/users";
+import { DiscoverRail } from "@/components/layout/DiscoverRail";
 
 export default async function MainLayout({
   children,
@@ -25,7 +26,7 @@ export default async function MainLayout({
   const unread = viewer.unreadCount;
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col lg:flex-row lg:gap-10 lg:px-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-col lg:flex-row lg:gap-10 lg:px-6 xl:max-w-7xl">
       {/* First stop for a keyboard user: skip the whole navigation rail. */}
       <a
         href="#main"
@@ -106,9 +107,15 @@ export default async function MainLayout({
         </div>
       </aside>
 
-      <main id="main" tabIndex={-1} className="min-w-0 flex-1 pb-20 lg:max-w-[38rem] lg:pb-16">
+      <main
+        id="main"
+        tabIndex={-1}
+        className="min-w-0 flex-1 pb-20 lg:max-w-[38rem] lg:pb-16"
+      >
         {children}
       </main>
+
+      <DiscoverRail viewerId={viewer.id} />
 
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 backdrop-blur lg:hidden">
         <Nav unreadCount={unread} />

@@ -40,6 +40,7 @@ function baseSelection(viewerId?: string | null) {
   return {
     id: posts.id,
     content: posts.content,
+    lang: posts.lang,
     createdAt: posts.createdAt,
     updatedAt: posts.updatedAt,
     authorId: users.id,

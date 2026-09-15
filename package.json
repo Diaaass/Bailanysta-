@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "screenshots": "tsx scripts/screenshots.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:lang": "tsx scripts/backfill-language.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

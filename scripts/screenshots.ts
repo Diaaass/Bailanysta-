@@ -10,7 +10,7 @@ const OUT = path.resolve("docs/screenshots");
 const USER = process.env.SHOT_USER ?? "demo";
 const PASSWORD = process.env.SHOT_PASSWORD ?? "demo1234";
 
-const DESKTOP = { width: 1280, height: 900 };
+const DESKTOP = { width: 1440, height: 940 };
 const MOBILE = { width: 390, height: 844 };
 
 async function login(page: Page) {
