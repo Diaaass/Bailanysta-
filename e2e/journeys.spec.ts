@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./test";
 import { login, publish, register, uniqueUser } from "./helpers";
 
 test.describe("доступ", () => {
@@ -87,7 +87,9 @@ test.describe("социальные действия", () => {
     const text = `Пост для лайка ${author.username}`;
     await publish(page, text);
 
-    const readerContext = await browser.newContext();
+    const readerContext = await browser.newContext({
+      extraHTTPHeaders: { "x-forwarded-for": "203.0.113.201" },
+    });
     const readerPage = await readerContext.newPage();
     await register(readerPage, uniqueUser());
 
@@ -133,7 +135,9 @@ test.describe("социальные действия", () => {
     const text = `Пост автора ${author.username}`;
     await publish(page, text);
 
-    const followerContext = await browser.newContext();
+    const followerContext = await browser.newContext({
+      extraHTTPHeaders: { "x-forwarded-for": "203.0.113.202" },
+    });
     const followerPage = await followerContext.newPage();
     await register(followerPage, uniqueUser());
 
@@ -152,6 +156,56 @@ test.describe("социальные действия", () => {
     await expect(followerPage.getByText(text).first()).toBeVisible();
 
     await followerContext.close();
+  });
+});
+
+test.describe("живые обновления", () => {
+  test("чужой пост поднимает плашку без перезагрузки", async ({
+    page,
+    browser,
+  }) => {
+    const reader = uniqueUser();
+    await register(page, reader);
+    await page.goto("/");
+    // Nothing new yet.
+    await expect(page.getByRole("button", { name: /Показать \d+ нов/ })).toHaveCount(
+      0,
+    );
+
+    const authorContext = await browser.newContext({
+      extraHTTPHeaders: { "x-forwarded-for": "203.0.113.203" },
+    });
+    const authorPage = await authorContext.newPage();
+    const author = uniqueUser();
+    await register(authorPage, author);
+    const text = `Живое обновление ${author.username}`;
+    await publish(authorPage, text);
+
+    // UPDATES_POLL_MS is 2s under test, so a full cycle fits comfortably here.
+    await expect(
+      page.getByRole("button", { name: /Показать \d+ нов/ }),
+    ).toBeVisible({ timeout: 20_000 });
+
+    await page.getByRole("button", { name: /Показать \d+ нов/ }).click();
+    await expect(page.getByText(text).first()).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Показать \d+ нов/ }),
+    ).toHaveCount(0);
+
+    await authorContext.close();
+  });
+
+  test("свой пост не считается новым", async ({ page }) => {
+    const user = uniqueUser();
+    await register(page, user);
+    await publish(page, `Свой пост ${user.username}`);
+
+    // The optimistic update already put it on screen, so a badge would point at
+    // something the reader is looking at. Several poll cycles pass here.
+    await page.waitForTimeout(8_000);
+    await expect(
+      page.getByRole("button", { name: /Показать \d+ нов/ }),
+    ).toHaveCount(0);
   });
 });
 

@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Avatar } from "@/components/ui/Avatar";
 import { getViewerChrome } from "@/lib/queries/users";
 import { DiscoverRail } from "@/components/layout/DiscoverRail";
+import { UpdatesProvider } from "@/components/updates/UpdatesProvider";
 
 export default async function MainLayout({
   children,
@@ -26,6 +27,10 @@ export default async function MainLayout({
   const unread = viewer.unreadCount;
 
   return (
+    <UpdatesProvider
+      initialUnread={unread}
+      pollIntervalMs={Number(process.env.UPDATES_POLL_MS) || undefined}
+    >
     <div className="mx-auto flex w-full max-w-6xl flex-col lg:flex-row lg:gap-10 lg:px-6 xl:max-w-7xl">
       {/* First stop for a keyboard user: skip the whole navigation rail. */}
       <a
@@ -56,7 +61,7 @@ export default async function MainLayout({
             </span>
           </Link>
 
-          <Nav unreadCount={unread} />
+          <Nav />
 
           <div className="mt-auto space-y-4 px-1">
             <ThemeToggle />
@@ -118,8 +123,9 @@ export default async function MainLayout({
       <DiscoverRail viewerId={viewer.id} />
 
       <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-surface/95 backdrop-blur lg:hidden">
-        <Nav unreadCount={unread} />
+        <Nav />
       </nav>
     </div>
+    </UpdatesProvider>
   );
 }

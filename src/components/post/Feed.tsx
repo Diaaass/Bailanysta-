@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { FeedPost } from "@/lib/queries/posts";
 import { PostCard } from "@/components/post/PostCard";
 import { PostComposer } from "@/components/post/PostComposer";
 import { FeedSkeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { cn } from "@/lib/utils";
+import { cn, plural } from "@/lib/utils";
+import { useUpdates } from "@/components/updates/UpdatesProvider";
 
 type Scope = "all" | "following";
 
@@ -37,6 +38,18 @@ export function Feed({
   const [loading, setLoading] = useState(false);
   const [switching, setSwitching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pulling, setPulling] = useState(false);
+  const { newPosts, setSince, clearNewPosts } = useUpdates();
+
+  const newest = posts[0]?.createdAt ?? null;
+
+  // Tell the shared poller how far this feed has already read. Only the main
+  // feed participates: a profile or search listing is not "the timeline".
+  useEffect(() => {
+    if (!showScopeSwitch) return;
+    setSince(newest);
+    return () => setSince(null);
+  }, [newest, setSince, showScopeSwitch]);
 
   const endpoint = useCallback(
     (nextScope: Scope, nextCursor: string | null) => {
@@ -65,6 +78,29 @@ export function Feed({
       setError("Не удалось загрузить ещё посты");
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Deliberately not auto-inserted: new posts arriving under the cursor make
+  // the page jump while someone is reading. The pill hands the choice over.
+  async function pullNewPosts() {
+    setPulling(true);
+    setError(null);
+    try {
+      const res = await fetch(endpoint(scope, null));
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setPosts(data.posts);
+      setCursor(data.nextCursor);
+      // Moved synchronously rather than waiting for the effect: a poll firing
+      // in between would still be comparing against the pre-pull timestamp.
+      setSince(data.posts[0]?.createdAt ?? null);
+      clearNewPosts();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch {
+      setError("Не удалось обновить ленту");
+    } finally {
+      setPulling(false);
     }
   }
 
@@ -127,6 +163,20 @@ export function Feed({
               ) : null}
             </button>
           ))}
+        </div>
+      ) : null}
+
+      {showScopeSwitch && newPosts > 0 ? (
+        <div className="sticky top-3 z-10 flex justify-center py-3">
+          <button
+            onClick={pullNewPosts}
+            disabled={pulling}
+            className="rounded-full bg-accent px-4 py-2 text-[0.8125rem] font-medium text-white shadow-lg shadow-ink/10 transition-colors hover:bg-accent-hover disabled:opacity-70"
+          >
+            {pulling
+              ? "Обновляю…"
+              : `Показать ${plural(newPosts, "новый пост", "новых поста", "новых постов")}`}
+          </button>
         </div>
       ) : null}
 

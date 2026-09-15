@@ -67,3 +67,18 @@ export function pluralWord(n: number, one: string, few: string, many: string) {
 export function plural(n: number, one: string, few: string, many: string) {
   return `${n} ${pluralWord(n, one, few, many)}`;
 }
+
+/**
+ * Only a same-origin path may be followed after sign-in. Without this a crafted
+ * /login?callbackUrl=https://evil.example sends the visitor off-site the moment
+ * their password is accepted - on the real domain, which is what makes it a
+ * usable phishing step. Protocol-relative "//host" is rejected too: the browser
+ * treats it as absolute.
+ */
+export function safeCallbackUrl(raw: string | null | undefined) {
+  if (!raw) return "/";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
+    return "/";
+  }
+  return raw;
+}

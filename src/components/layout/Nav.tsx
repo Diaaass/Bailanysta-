@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useUpdates } from "@/components/updates/UpdatesProvider";
 
 type Item = { href: string; label: string; icon: ReactNode; match: (p: string) => boolean };
 
@@ -46,15 +47,16 @@ const ITEMS: Item[] = [
   },
 ];
 
-export function Nav({ unreadCount = 0 }: { unreadCount?: number }) {
+export function Nav() {
   const pathname = usePathname();
+  const { unread } = useUpdates();
 
   return (
     <nav aria-label="Основная навигация">
       <ul className="flex justify-around lg:block lg:space-y-0.5">
         {ITEMS.map((item) => {
           const active = item.match(pathname);
-          const showBadge = item.href === "/notifications" && unreadCount > 0;
+          const showBadge = item.href === "/notifications" && unread > 0;
           return (
             <li key={item.href}>
               <Link
@@ -72,7 +74,7 @@ export function Nav({ unreadCount = 0 }: { unreadCount?: number }) {
                   {item.icon}
                   {showBadge ? (
                     <span className="absolute -right-1.5 -top-1 grid h-[1.05rem] min-w-[1.05rem] place-items-center rounded-full bg-ember px-1 text-[0.625rem] font-semibold text-white">
-                      {unreadCount > 9 ? "9+" : unreadCount}
+                      {unread > 9 ? "9+" : unread}
                     </span>
                   ) : null}
                 </span>

@@ -63,6 +63,9 @@ export default defineConfig({
           // default (on Vercel it is detected automatically), and without this
           // every session lookup fails with UntrustedHost.
           AUTH_TRUST_HOST: "true",
+          // The feed poller runs every 20 seconds for a person; the specs assert
+          // the same behaviour without waiting that long for each one.
+          UPDATES_POLL_MS: "2000",
           AUTH_SECRET:
             process.env.AUTH_SECRET ?? fileEnv.AUTH_SECRET ?? "e2e-secret",
           // AI is deliberately left unset: the specs assert the degraded path,

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { safeCallbackUrl } from "@/lib/utils";
 
 type Mode = "login" | "register";
 
@@ -29,7 +30,7 @@ const COPY = {
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
 
   const [username, setUsername] = useState("");
   const [displayName, setDisplayName] = useState("");

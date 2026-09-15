@@ -15,6 +15,20 @@
       "when": 1789476621001,
       "tag": "0001_glorious_senator_kelly",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789494224602,
+      "tag": "0002_add_rate_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1789494232497,
+      "tag": "0003_drop_ai_usage",
+      "breakpoints": true
     }
   ]
 }

@@ -44,6 +44,7 @@ export function ThemeToggle() {
             role="radio"
             aria-checked={active}
             title={option.label}
+            aria-label={option.label}
             onClick={() => setTheme(option.value)}
             className={cn(
               "flex items-center gap-1.5 rounded-full px-2 py-1.5 text-[0.6875rem] font-medium transition-colors sm:px-2.5 sm:py-1",
@@ -64,10 +65,10 @@ export function ThemeToggle() {
                 strokeLinejoin="round"
               />
             </svg>
-            {/* The label carries the meaning; on a phone the icon stands in for
-                it so the control does not eat half the header. */}
+            {/* The icon stands in for the label on a phone so the control does
+                not eat half the header; aria-label carries the meaning at every
+                width, so the label is never duplicated in the accessible name. */}
             <span className="hidden sm:inline">{option.label}</span>
-            <span className="sr-only sm:hidden">{option.label}</span>
           </button>
         );
       })}

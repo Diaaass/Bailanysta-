@@ -9,7 +9,7 @@ import {
   type ComposeMode,
   type LanguageCode,
 } from "@/lib/ai/prompts";
-import { checkRateLimit } from "@/lib/ai/rate-limit";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 const bodySchema = z.object({
   mode: z.enum(COMPOSE_MODES),
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const limit = await checkRateLimit(viewer.id, "compose");
+  const limit = await checkRateLimit("ai:compose", viewer.id, RATE_LIMITS.ai);
   if (!limit.allowed) {
     return Response.json(
       {

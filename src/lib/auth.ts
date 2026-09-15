@@ -5,6 +5,12 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { credentialsSchema } from "@/lib/validation";
+import {
+  callerAddress,
+  checkRateLimit,
+  RATE_LIMITS,
+  resetRateLimit,
+} from "@/lib/rate-limit";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
@@ -15,11 +21,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         username: { label: "Username", type: "text" },
         password: { label: "Password", type: "password" },
       },
-      authorize: async (raw) => {
+      authorize: async (raw, request) => {
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success) return null;
 
         const { username, password } = parsed.data;
+        const address = callerAddress(request.headers);
+
+        // Both are limited: the handle stops a targeted attack on one account,
+        // the address stops a spray across many. Counted before the password is
+        // checked so a wrong guess still costs an attempt.
+        for (const subject of [`user:${username}`, `addr:${address}`]) {
+          const limit = await checkRateLimit(
+            "auth:signin",
+            subject,
+            RATE_LIMITS.signIn,
+          );
+          if (!limit.allowed) return null;
+        }
+
         const [found] = await db
           .select()
           .from(users)
@@ -28,6 +48,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!found) return null;
         if (!(await compare(password, found.passwordHash))) return null;
+
+        // A correct password clears the counter so a person who mistyped twice
+        // is not left throttled.
+        await resetRateLimit("auth:signin", `user:${username}`);
 
         return {
           id: found.id,

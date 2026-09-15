@@ -3,7 +3,7 @@ import { z } from "zod";
 import { badRequest, getSessionUser, jsonError, unauthorized } from "@/lib/api";
 import { AiUnavailableError, isAiConfigured } from "@/lib/ai/client";
 import { askAboutOwnPosts } from "@/lib/ai/rag";
-import { checkRateLimit } from "@/lib/ai/rate-limit";
+import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 const bodySchema = z.object({
   question: z.string().trim().min(3, "Вопрос слишком короткий").max(300),
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     return jsonError("AI-функции выключены: в окружении не задан AI_API_KEY", 503);
   }
 
-  const limit = await checkRateLimit(viewer.id, "ask");
+  const limit = await checkRateLimit("ai:ask", viewer.id, RATE_LIMITS.ai);
   if (!limit.allowed) {
     return Response.json(
       {

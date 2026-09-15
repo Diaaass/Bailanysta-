@@ -1,4 +1,4 @@
-import { relations, sql } from "drizzle-orm";
+import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -139,21 +139,29 @@ export const notifications = pgTable(
   ],
 );
 
-// One row per AI call. Counting rows in a window is a shared limit that holds
-// across serverless instances, unlike an in-memory counter.
-export const aiUsage = pgTable(
-  "ai_usage",
+// One row per rate-limited event. Counting rows in a window gives a limit that
+// holds across serverless instances, unlike an in-memory counter.
+//
+// `subject` is free-form on purpose: an AI call is limited per user id, while a
+// sign-in attempt has to be limited before any user is known - by the submitted
+// handle and by the caller's address.
+export const rateEvents = pgTable(
+  "rate_events",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    kind: varchar("kind", { length: 24 }).notNull(),
+    bucket: varchar("bucket", { length: 32 }).notNull(),
+    subject: varchar("subject", { length: 200 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (t) => [index("ai_usage_user_kind_time_idx").on(t.userId, t.kind, t.createdAt)],
+  (t) => [
+    index("rate_events_bucket_subject_time_idx").on(
+      t.bucket,
+      t.subject,
+      t.createdAt,
+    ),
+  ],
 );
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -183,5 +191,3 @@ export type Post = typeof posts.$inferSelect;
 export type Comment = typeof comments.$inferSelect;
 export type Notification = typeof notifications.$inferSelect;
 
-export const vectorLiteral = (embedding: number[]) =>
-  sql.raw(`'[${embedding.join(",")}]'::vector`);

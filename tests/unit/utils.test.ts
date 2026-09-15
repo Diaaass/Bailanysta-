@@ -6,6 +6,7 @@ import {
   plural,
   pluralWord,
   relativeTime,
+  safeCallbackUrl,
 } from "@/lib/utils";
 
 afterEach(() => vi.useRealTimers());
@@ -92,5 +93,39 @@ describe("plural", () => {
 
   it("prefixes the number", () => {
     expect(plural(2, "лайк", "лайка", "лайков")).toBe("2 лайка");
+  });
+});
+
+describe("safeCallbackUrl", () => {
+  it.each(["/", "/search", "/profile/demo", "/post/abc?x=1", "/a#b"])(
+    "keeps the same-origin path %j",
+    (path) => {
+      expect(safeCallbackUrl(path)).toBe(path);
+    },
+  );
+
+  it.each([
+    "https://evil.example",
+    "http://evil.example/login",
+    // Protocol-relative: the browser resolves this to an absolute URL.
+    "//evil.example",
+    // Backslashes: some browsers normalise them to forward slashes.
+    String.raw`\evil.example`,
+    String.raw`/\evil.example`,
+    "javascript:alert(1)",
+    "evil.example",
+  ])("refuses to leave the origin for %j", (path) => {
+    expect(safeCallbackUrl(path)).toBe("/");
+  });
+
+  it("keeps a plain path that merely looks like a host", () => {
+    // "/evil.example" is a same-origin path, not an off-site redirect.
+    expect(safeCallbackUrl("/evil.example")).toBe("/evil.example");
+  });
+
+  it("falls back to the feed for a missing value", () => {
+    expect(safeCallbackUrl(null)).toBe("/");
+    expect(safeCallbackUrl(undefined)).toBe("/");
+    expect(safeCallbackUrl("")).toBe("/");
   });
 });

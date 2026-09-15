@@ -5,8 +5,24 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { badRequest } from "@/lib/api";
 import { registerSchema } from "@/lib/validation";
+import { callerAddress, checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  const limit = await checkRateLimit(
+    "auth:signup",
+    callerAddress(request.headers),
+    RATE_LIMITS.signUp,
+  );
+  if (!limit.allowed) {
+    return Response.json(
+      { error: "Слишком много регистраций. Попробуйте позже." },
+      {
+        status: 429,
+        headers: { "Retry-After": String(limit.retryAfterSeconds) },
+      },
+    );
+  }
+
   let raw: unknown;
   try {
     raw = await request.json();

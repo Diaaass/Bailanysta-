@@ -1,6 +1,7 @@
 import { hash } from "bcryptjs";
 import postgres from "postgres";
 import { loadEnv } from "./env.mjs";
+import { detectLanguage } from "../src/lib/language";
 
 loadEnv();
 
@@ -85,25 +86,48 @@ async function main() {
   }
   console.log(`inserted ${userIds.size} users`);
 
-  const postIds: { id: string; author: string }[] = [];
-  let offsetMinutes = SEED.length * 3 * 90;
+  // Offsets are built back-to-front so every timestamp is strictly in the past
+  // and strictly ordered. An earlier version subtracted a random amount from a
+  // fixed start and ran past zero, which put the newest seeded posts hours into
+  // the future - visible in the interface as "через 4 часа".
+  const entries = SEED.flatMap((u) =>
+    u.posts.map((content) => ({ author: u.username, content })),
+  );
 
-  for (const u of SEED) {
-    for (const content of u.posts) {
-      offsetMinutes -= 90 + Math.floor(Math.random() * 120);
-      const [row] = await sql<{ id: string }[]>`
-        INSERT INTO posts (author_id, content, created_at, updated_at)
-        VALUES (
-          ${userIds.get(u.username)!},
-          ${content},
-          NOW() - ${`${offsetMinutes} minutes`}::interval,
-          NOW() - ${`${offsetMinutes} minutes`}::interval
-        )
-        RETURNING id
-      `;
-      postIds.push({ id: row.id, author: u.username });
-    }
+  const offsets: number[] = [];
+  let cursorMinutes = 20 + Math.floor(Math.random() * 40);
+  for (let i = 0; i < entries.length; i++) {
+    offsets.unshift(cursorMinutes);
+    cursorMinutes += 90 + Math.floor(Math.random() * 120);
   }
+
+  const postIds: { id: string; author: string }[] = [];
+
+  for (const [index, entry] of entries.entries()) {
+    const ago = `${offsets[index]} minutes`;
+    const [row] = await sql<{ id: string }[]>`
+      INSERT INTO posts (author_id, content, lang, created_at, updated_at)
+      VALUES (
+        ${userIds.get(entry.author)!},
+        ${entry.content},
+        ${detectLanguage(entry.content)},
+        NOW() - ${ago}::interval,
+        NOW() - ${ago}::interval
+      )
+      RETURNING id
+    `;
+    postIds.push({ id: row.id, author: entry.author });
+  }
+
+  const [future] = await sql<{ n: number }[]>`
+    SELECT count(*)::int AS n FROM posts WHERE created_at > now()
+  `;
+  if (future.n > 0) {
+    throw new Error(
+      `seed produced ${future.n} posts dated in the future - check the offset maths`,
+    );
+  }
+
   console.log(`inserted ${postIds.length} posts`);
 
   const usernames = SEED.map((u) => u.username);
