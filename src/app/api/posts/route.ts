@@ -5,6 +5,7 @@ import { posts } from "@/lib/db/schema";
 import { badRequest, getSessionUser, unauthorized } from "@/lib/api";
 import { FEED_PAGE_SIZE, getFeed, getPostById } from "@/lib/queries/posts";
 import { postContentSchema } from "@/lib/validation";
+import { indexPost } from "@/lib/ai/indexing";
 
 export async function GET(request: NextRequest) {
   const viewer = await getSessionUser();
@@ -49,6 +50,10 @@ export async function POST(request: NextRequest) {
     .insert(posts)
     .values({ authorId: viewer.id, content: parsed.data })
     .returning({ id: posts.id });
+
+  // Awaited on purpose: a serverless function is frozen once it responds, so
+  // background indexing would simply never run.
+  await indexPost(created.id, parsed.data);
 
   const post = await getPostById(created.id, viewer.id);
   return Response.json({ post }, { status: 201 });

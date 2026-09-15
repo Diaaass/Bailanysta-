@@ -11,6 +11,7 @@ import {
 } from "@/lib/api";
 import { getPostById } from "@/lib/queries/posts";
 import { postContentSchema } from "@/lib/validation";
+import { indexPost } from "@/lib/ai/indexing";
 
 export async function GET(
   _request: NextRequest,
@@ -58,6 +59,10 @@ export async function PATCH(
     .update(posts)
     .set({ content: parsed.data, updatedAt: new Date(), embedding: null })
     .where(eq(posts.id, id));
+
+  // The old vector describes text that no longer exists, so it is cleared
+  // above and recomputed here.
+  await indexPost(id, parsed.data);
 
   const post = await getPostById(id, viewer.id);
   return Response.json({ post });
