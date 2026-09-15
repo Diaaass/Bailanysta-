@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const limit = checkRateLimit(viewer.id);
+  const limit = await checkRateLimit(viewer.id, "compose");
   if (!limit.allowed) {
     return Response.json(
       {

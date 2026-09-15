@@ -39,6 +39,13 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    // Integration tests talk to a real Postgres over the network; a few of them
+    // make more than a dozen sequential round trips.
+    testTimeout: 60_000,
+    hookTimeout: 60_000,
+    // Integration files share one database and each rebuilds the fixture, so
+    // running them in parallel would have them truncate each other's data.
+    fileParallelism: false,
     env: {
       DATABASE_URL: testDatabaseUrl,
       TEST_DATABASE_URL: testDatabaseUrl,

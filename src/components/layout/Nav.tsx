@@ -27,6 +27,12 @@ const ITEMS: Item[] = [
     match: (p) => p.startsWith("/search"),
   },
   {
+    href: "/ask",
+    label: "Анализ",
+    icon: icon("M12 3a9 9 0 100 18 9 9 0 000-18zM9.1 9a3 3 0 015.8 1c0 2-3 3-3 3M12 17h.01"),
+    match: (p) => p.startsWith("/ask"),
+  },
+  {
     href: "/notifications",
     label: "Уведомления",
     icon: icon("M18 8a6 6 0 10-12 0c0 7-3 8-3 8h18s-3-1-3-8M13.7 21a2 2 0 01-3.4 0"),

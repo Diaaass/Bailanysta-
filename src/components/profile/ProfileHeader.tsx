@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { Profile } from "@/lib/queries/users";
 import { Avatar } from "@/components/ui/Avatar";
 import { cn } from "@/lib/utils";
@@ -100,17 +101,33 @@ export function ProfileHeader({ profile }: { profile: Profile }) {
           </dd>
           <span className="text-ink-muted">постов</span>
         </div>
-        <div className="flex items-baseline gap-1.5">
+        <div>
           <dt className="sr-only">Подписчиков</dt>
-          <dd className="font-semibold tabular-nums text-ink">{followers}</dd>
-          <span className="text-ink-muted">подписчиков</span>
-        </div>
-        <div className="flex items-baseline gap-1.5">
-          <dt className="sr-only">Подписок</dt>
-          <dd className="font-semibold tabular-nums text-ink">
-            {profile.followingCount}
+          <dd>
+            <Link
+              href={`/profile/${profile.username}/followers`}
+              className="flex items-baseline gap-1.5 hover:underline"
+            >
+              <span className="font-semibold tabular-nums text-ink">
+                {followers}
+              </span>
+              <span className="text-ink-muted">подписчиков</span>
+            </Link>
           </dd>
-          <span className="text-ink-muted">подписок</span>
+        </div>
+        <div>
+          <dt className="sr-only">Подписок</dt>
+          <dd>
+            <Link
+              href={`/profile/${profile.username}/following`}
+              className="flex items-baseline gap-1.5 hover:underline"
+            >
+              <span className="font-semibold tabular-nums text-ink">
+                {profile.followingCount}
+              </span>
+              <span className="text-ink-muted">подписок</span>
+            </Link>
+          </dd>
         </div>
         <span className="text-ink-faint">на Bailanysta с {joined}</span>
       </dl>

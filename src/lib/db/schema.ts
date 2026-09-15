@@ -139,6 +139,23 @@ export const notifications = pgTable(
   ],
 );
 
+// One row per AI call. Counting rows in a window is a shared limit that holds
+// across serverless instances, unlike an in-memory counter.
+export const aiUsage = pgTable(
+  "ai_usage",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: varchar("kind", { length: 24 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("ai_usage_user_kind_time_idx").on(t.userId, t.kind, t.createdAt)],
+);
+
 export const usersRelations = relations(users, ({ many }) => ({
   posts: many(posts),
   likes: many(likes),

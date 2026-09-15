@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { follows, users } from "@/lib/db/schema";
 
@@ -134,4 +134,79 @@ export async function updateProfile(
       bio: users.bio,
     });
   return row ?? null;
+}
+
+export type UserCard = {
+  id: string;
+  username: string;
+  displayName: string;
+  bio: string;
+  avatarSeed: string;
+  followedByViewer: boolean;
+  isViewer: boolean;
+};
+
+type Direction = "followers" | "following";
+
+export async function getConnections(
+  username: string,
+  direction: Direction,
+  viewerId?: string | null,
+): Promise<UserCard[] | null> {
+  const owner = await getUserByUsername(username);
+  if (!owner) return null;
+
+  // "followers" lists people pointing at the owner; "following" lists the
+  // people the owner points at. Same table, opposite columns.
+  const rows =
+    direction === "followers"
+      ? await db
+          .select({
+            id: users.id,
+            username: users.username,
+            displayName: users.displayName,
+            bio: users.bio,
+            avatarSeed: users.avatarSeed,
+            createdAt: follows.createdAt,
+          })
+          .from(follows)
+          .innerJoin(users, eq(users.id, follows.followerId))
+          .where(eq(follows.followingId, owner.id))
+          .orderBy(desc(follows.createdAt))
+      : await db
+          .select({
+            id: users.id,
+            username: users.username,
+            displayName: users.displayName,
+            bio: users.bio,
+            avatarSeed: users.avatarSeed,
+            createdAt: follows.createdAt,
+          })
+          .from(follows)
+          .innerJoin(users, eq(users.id, follows.followingId))
+          .where(eq(follows.followerId, owner.id))
+          .orderBy(desc(follows.createdAt));
+
+  if (rows.length === 0) return [];
+
+  const viewerFollows = viewerId
+    ? new Set(
+        (
+          await db
+            .select({ followingId: follows.followingId })
+            .from(follows)
+            .where(eq(follows.followerId, viewerId))
+        ).map((r) => r.followingId),
+      )
+    : new Set<string>();
+
+  return rows.map((row) => ({
+    id: row.id,
+    username: row.username,
+    displayName: row.displayName,
+    bio: row.bio,
+    avatarSeed: row.avatarSeed,
+    followedByViewer: viewerFollows.has(row.id),
+    isViewer: row.id === viewerId,
+  }));
 }
