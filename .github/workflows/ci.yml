@@ -47,6 +47,11 @@ jobs:
       - name: Apply migrations
         run: npm run db:migrate
 
+      # PageProps/RouteContext are global helpers Next generates into .next/types,
+      # which is not committed - without this tsc cannot see them.
+      - name: Generate route types
+        run: npx next typegen
+
       - name: Typecheck
         run: npx tsc --noEmit
 
